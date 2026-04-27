@@ -1,1 +1,24 @@
-@AGENTS.md
+# Hardware Hub
+
+One clean, AI-powered internal tool for managing, renting, and maintaining company equipment at Booksy.
+
+## Context Files
+
+Read the following to get the full context of the project:
+
+- @context/project-overview.md
+- @context/coding-standards.md
+- @context/ai-interaction.md
+- @context/current-feature.md
+
+**IMPORTANT:** Do not add Claude to any commit messages
+
+## Commands
+
+- `npm run dev` — start dev server (Turbopack)
+- `npm run build` — production build
+- `npm run start` — serve production build
+- `npm run lint` — run ESLint (flat config, v9)
+- `npm test` — run Vitest unit tests (server actions + utilities)
+- `npm run test:watch` — Vitest watch mode
+- `npm run test:coverage` — Vitest with v8 coverage
