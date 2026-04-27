@@ -76,7 +76,7 @@ export function HardwareList({ items }: { items: Item[] }) {
       </header>
 
       <div className="relative">
-        <Sparkles className="text-accent pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2" />
+        <Sparkles className="text-brand pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2" />
         <Input
           type="search"
           value={query}
@@ -101,7 +101,8 @@ export function HardwareList({ items }: { items: Item[] }) {
               size="sm"
               onClick={() => setSortKey(option.key)}
               className={cn(
-                isActive && "bg-accent text-accent-foreground hover:bg-accent",
+                isActive &&
+                  "bg-brand text-brand-foreground hover:bg-brand/90",
               )}
               aria-pressed={isActive}
             >

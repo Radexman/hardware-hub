@@ -1,5 +1,6 @@
-import { Calendar } from "lucide-react";
+import { ArrowRightLeft, Calendar } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import type { Item, ItemStatus } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +14,12 @@ const STATUS_STYLES: Record<ItemStatus, string> = {
   AVAILABLE: "bg-green-400/10 text-green-400 ring-green-400/20",
   IN_USE: "bg-yellow-400/10 text-yellow-400 ring-yellow-400/20",
   REPAIR: "bg-red-400/10 text-red-400 ring-red-400/20",
+};
+
+const STATUS_BORDER: Record<ItemStatus, string> = {
+  AVAILABLE: "border-r-green-400",
+  IN_USE: "border-r-yellow-400",
+  REPAIR: "border-r-red-400",
 };
 
 const DATE_FMT = new Intl.DateTimeFormat("en-US", {
@@ -43,8 +50,15 @@ function StatusBadge({ status }: { status: ItemStatus }) {
 }
 
 export function ItemCard({ item }: { item: Item }) {
+  const isAvailable = item.status === "AVAILABLE";
+
   return (
-    <article className="bg-card text-card-foreground border-border flex flex-col gap-3 rounded-lg border p-5">
+    <article
+      className={cn(
+        "bg-card text-card-foreground border-border flex flex-col gap-3 rounded-lg border border-r-4 p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/40",
+        STATUS_BORDER[item.status],
+      )}
+    >
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-base font-semibold leading-tight">{item.name}</h3>
         <StatusBadge status={item.status} />
@@ -60,7 +74,7 @@ export function ItemCard({ item }: { item: Item }) {
       {item.assignedTo ? (
         <div className="text-xs">
           <span className="text-muted-foreground">Assigned to: </span>
-          <span className="text-accent">{item.assignedTo}</span>
+          <span className="text-brand">{item.assignedTo}</span>
         </div>
       ) : null}
 
@@ -68,6 +82,17 @@ export function ItemCard({ item }: { item: Item }) {
         <div className="bg-background/40 text-muted-foreground rounded-md border border-white/5 px-3 py-2 text-xs">
           {item.notes}
         </div>
+      ) : null}
+
+      {isAvailable ? (
+        <Button
+          type="button"
+          size="sm"
+          className="bg-brand text-brand-foreground hover:bg-brand/90 mt-1 self-start"
+        >
+          <ArrowRightLeft />
+          Rent
+        </Button>
       ) : null}
     </article>
   );
