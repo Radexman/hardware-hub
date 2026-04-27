@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Sparkles } from "lucide-react";
+import { LayoutGrid, List, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
-import { ItemCard } from "@/components/dashboard/item-card";
+import { ItemCard, type ItemCardView } from "@/components/dashboard/item-card";
 import type { Item, ItemStatus } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
@@ -52,9 +53,13 @@ function compareItems(a: Item, b: Item, sortKey: SortKey): number {
   }
 }
 
+const ACTIVE_BUTTON =
+  "bg-brand text-brand-foreground border-brand hover:bg-brand/90 hover:text-brand-foreground";
+
 export function HardwareList({ items }: { items: Item[] }) {
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("name");
+  const [view, setView] = useState<ItemCardView>("grid");
 
   const visible = useMemo(() => {
     const trimmed = query.trim().toLowerCase();
@@ -87,39 +92,71 @@ export function HardwareList({ items }: { items: Item[] }) {
         />
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-muted-foreground mr-1 text-xs font-medium uppercase tracking-wider">
-          Sort
-        </span>
-        {SORT_OPTIONS.map((option) => {
-          const isActive = option.key === sortKey;
-          return (
-            <Button
-              key={option.key}
-              type="button"
-              variant={isActive ? "default" : "outline"}
-              size="sm"
-              onClick={() => setSortKey(option.key)}
-              className={cn(
-                isActive &&
-                  "bg-brand text-brand-foreground hover:bg-brand/90",
-              )}
-              aria-pressed={isActive}
-            >
-              {option.label}
-            </Button>
-          );
-        })}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
+            Sort
+          </span>
+          <ButtonGroup>
+            {SORT_OPTIONS.map((option) => {
+              const isActive = option.key === sortKey;
+              return (
+                <Button
+                  key={option.key}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSortKey(option.key)}
+                  className={cn(isActive && ACTIVE_BUTTON)}
+                  aria-pressed={isActive}
+                >
+                  {option.label}
+                </Button>
+              );
+            })}
+          </ButtonGroup>
+        </div>
+
+        <ButtonGroup aria-label="View mode">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setView("grid")}
+            aria-pressed={view === "grid"}
+            aria-label="Grid view"
+            className={cn(view === "grid" && ACTIVE_BUTTON)}
+          >
+            <LayoutGrid />
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setView("list")}
+            aria-pressed={view === "list"}
+            aria-label="List view"
+            className={cn(view === "list" && ACTIVE_BUTTON)}
+          >
+            <List />
+          </Button>
+        </ButtonGroup>
       </div>
 
       {visible.length === 0 ? (
         <div className="text-muted-foreground border-border rounded-lg border border-dashed p-8 text-center text-sm">
           No items match your search.
         </div>
-      ) : (
+      ) : view === "grid" ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {visible.map((item) => (
-            <ItemCard key={item.id} item={item} />
+            <ItemCard key={item.id} item={item} view="grid" />
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {visible.map((item) => (
+            <ItemCard key={item.id} item={item} view="list" />
           ))}
         </div>
       )}
