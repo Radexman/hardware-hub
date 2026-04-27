@@ -17,7 +17,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarRail,
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
 
 const NAV_ITEMS = [
@@ -42,15 +42,18 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <Link
-          href="/dashboard"
-          className="flex items-center gap-2 px-2 py-1.5"
-        >
-          <Wrench className="text-accent size-5 shrink-0" />
-          <span className="font-mono text-base font-bold tracking-tight group-data-[collapsible=icon]:hidden">
-            Hardware Hub
-          </span>
-        </Link>
+        <div className="flex items-center justify-between gap-2 group-data-[collapsible=icon]:justify-center">
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-2 px-2 py-1.5 group-data-[collapsible=icon]:hidden"
+          >
+            <Wrench className="text-brand size-5 shrink-0" />
+            <span className="font-mono text-base font-bold tracking-tight">
+              Hardware Hub
+            </span>
+          </Link>
+          <SidebarTrigger className="shrink-0" />
+        </div>
       </SidebarHeader>
 
       <SidebarContent>
@@ -84,7 +87,7 @@ export function AppSidebar() {
             {currentUser.image ? (
               <AvatarImage src={currentUser.image} alt={currentUser.name} />
             ) : null}
-            <AvatarFallback className="bg-accent text-accent-foreground text-xs font-medium">
+            <AvatarFallback className="bg-brand text-brand-foreground text-xs font-medium">
               {getInitials(currentUser.name)}
             </AvatarFallback>
           </Avatar>
@@ -106,8 +109,6 @@ export function AppSidebar() {
           </Button>
         </div>
       </SidebarFooter>
-
-      <SidebarRail />
     </Sidebar>
   );
 }
