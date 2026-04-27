@@ -21,12 +21,12 @@ The result: lost equipment, wasted time, and zero oversight. **Hardware Hub cent
 
 ## 👥 Target Users
 
-| Persona              | Needs                                                                  |
-| -------------------- | ---------------------------------------------------------------------- |
-| **Employee**         | Browse available hardware, rent devices quickly, track return deadlines |
-| **Power User**       | Semantic search ("I need a phone for testing"), rental history at hand  |
-| **IT Admin**         | Full CRUD over inventory, repair management, user account creation     |
-| **Team Lead**        | Visibility into who has what, fleet status at a glance                 |
+| Persona        | Needs                                                                   |
+| -------------- | ----------------------------------------------------------------------- |
+| **Employee**   | Browse available hardware, rent devices quickly, track return deadlines |
+| **Power User** | Semantic search ("I need a phone for testing"), rental history at hand  |
+| **IT Admin**   | Full CRUD over inventory, repair management, user account creation      |
+| **Team Lead**  | Visibility into who has what, fleet status at a glance                  |
 
 ---
 
@@ -36,15 +36,15 @@ The result: lost equipment, wasted time, and zero oversight. **Hardware Hub cent
 
 Items are the core entity of Hardware Hub. Each device in the system is an **Item** with properties:
 
-| Field          | Description                                      | Example                    |
-| -------------- | ------------------------------------------------ | -------------------------- |
-| `name`         | Device name / model                              | "Apple iPhone 13 Pro Max"  |
-| `brand`        | Manufacturer                                     | "Apple"                    |
-| `purchaseDate` | Date the device was acquired                     | 2021-11-23                 |
+| Field          | Description                                      | Example                     |
+| -------------- | ------------------------------------------------ | --------------------------- |
+| `name`         | Device name / model                              | "Apple iPhone 13 Pro Max"   |
+| `brand`        | Manufacturer                                     | "Apple"                     |
+| `purchaseDate` | Date the device was acquired                     | 2021-11-23                  |
 | `status`       | Current state of the device                      | Available / In Use / Repair |
-| `assignedTo`   | Email of current renter (nullable)               | "j.doe@booksy.com"         |
-| `returnDate`   | Expected return deadline (nullable)              | 2026-05-15                 |
-| `notes`        | Free-text notes (damage history, warnings, etc.) | "Battery swelling"         |
+| `assignedTo`   | Email of current renter (nullable)               | "j.doe@booksy.com"          |
+| `returnDate`   | Expected return deadline (nullable)              | 2026-05-15                  |
+| `notes`        | Free-text notes (damage history, warnings, etc.) | "Battery swelling"          |
 
 **Status lifecycle:**
 
@@ -56,6 +56,7 @@ Available ──→ In Use ──→ Available
 ```
 
 **Guards / business rules:**
+
 - Only items with status `Available` can be rented
 - Only items with status `In Use` can be returned
 - Items in `Repair` cannot be rented
@@ -67,10 +68,10 @@ Available ──→ In Use ──→ Available
 
 Two roles in the system:
 
-| Role      | Access                                                                 |
-| --------- | ---------------------------------------------------------------------- |
-| **User**  | Browse hardware, rent/return devices, view own rentals                 |
-| **Admin** | Everything a User can do + full CRUD on items + manage user accounts   |
+| Role      | Access                                                               |
+| --------- | -------------------------------------------------------------------- |
+| **User**  | Browse hardware, rent/return devices, view own rentals               |
+| **Admin** | Everything a User can do + full CRUD on items + manage user accounts |
 
 - Login via email/password only
 - Only admins can create new accounts (no self-registration)
@@ -78,21 +79,21 @@ Two roles in the system:
 
 ### C. Pages & Navigation
 
-| Page               | Route          | Description                                                     |
-| ------------------ | -------------- | --------------------------------------------------------------- |
-| **Login**          | `/login`       | Simple login screen, only pre-created users can access          |
-| **Hardware List**  | `/hardware`    | Main dashboard — all items with sorting, filtering, and AI search |
-| **My Rentals**     | `/my-rentals`  | User's currently rented items with return deadlines             |
-| **Admin Panel**    | `/admin`       | Full item management + user account creation (admin-only)       |
+| Page              | Route         | Description                                                       |
+| ----------------- | ------------- | ----------------------------------------------------------------- |
+| **Login**         | `/login`      | Simple login screen, only pre-created users can access            |
+| **Hardware List** | `/hardware`   | Main dashboard — all items with sorting, filtering, and AI search |
+| **My Rentals**    | `/my-rentals` | User's currently rented items with return deadlines               |
+| **Admin Panel**   | `/admin`      | Full item management + user account creation (admin-only)         |
 
 ### D. AI-Native Layer — Semantic Search
 
 Powered by **OpenAI `gpt-5-nano`**:
 
 - 🔍 **Semantic Search** — natural language queries at the top of the Hardware List page
-  - "I need something to test a mobile app on" → returns iPhones, iPads, Androids
-  - "Give me a laptop for development" → returns MacBooks, Dell XPS
-  - "I need headphones for a call" → returns Sony WH-1000XM4
+    - "I need something to test a mobile app on" → returns iPhones, iPads, Androids
+    - "Give me a laptop for development" → returns MacBooks, Dell XPS
+    - "I need headphones for a call" → returns Sony WH-1000XM4
 - The AI interprets user intent and matches it against item names, brands, notes, and categories
 - Falls back to standard text search when AI is unavailable
 
@@ -216,15 +217,15 @@ enum RentalAction {
 
 The initial dataset contains **intentional data quality issues** to test validation and auditing:
 
-| Issue                        | Item ID | Description                                              |
-| ---------------------------- | ------- | -------------------------------------------------------- |
-| Duplicate ID                 | 4       | Two items share id=4 (Samsung Galaxy S21 & Lenovo laptop)|
-| Contradictory status + notes | 5       | Status "Available" but notes warn about battery swelling |
-| Future purchase date         | 6       | purchaseDate is 2027-10-10 (in the future)               |
-| Brand typo                   | 9       | Brand is "Appel" instead of "Apple"                      |
-| Non-standard date format     | 9       | purchaseDate is "22-05-2023" instead of ISO format       |
-| Missing data                 | 10      | Empty brand, null date, invalid "Unknown" status         |
-| Status vs history mismatch   | 11      | Status "Available" but history notes liquid damage       |
+| Issue                        | Item ID | Description                                               |
+| ---------------------------- | ------- | --------------------------------------------------------- |
+| Duplicate ID                 | 4       | Two items share id=4 (Samsung Galaxy S21 & Lenovo laptop) |
+| Contradictory status + notes | 5       | Status "Available" but notes warn about battery swelling  |
+| Future purchase date         | 6       | purchaseDate is 2027-10-10 (in the future)                |
+| Brand typo                   | 9       | Brand is "Appel" instead of "Apple"                       |
+| Non-standard date format     | 9       | purchaseDate is "22-05-2023" instead of ISO format        |
+| Missing data                 | 10      | Empty brand, null date, invalid "Unknown" status          |
+| Status vs history mismatch   | 11      | Status "Available" but history notes liquid damage        |
 
 These should be **cleaned and normalized** during the seed migration. Document all decisions in the README.
 
@@ -266,54 +267,63 @@ These should be **cleaned and normalized** during the seed migration. Document a
 
 **References:** [Linear](https://linear.app) · [Vercel Dashboard](https://vercel.com) · [Retool](https://retool.com)
 
+## Screenshots
+
+Refer to the screenshots below as a base for the dashboard ui. It does not have to be exact. Use it as a reference.
+
+- @context/screenshots/admin-panel.png
+- @context/screenshots/login.png
+- @context/screenshots/user-hardware-list.png
+- @context/screenshots/user-my-rentals.png
+
 ### Color System
 
-| Token                | Hex         | Usage                                        |
-| -------------------- | ----------- | -------------------------------------------- |
-| `--background`       | `#09090b`   | App background (zinc-950)                    |
-| `--surface`          | `#18181b`   | Cards, sidebar, modals (zinc-900)            |
-| `--surface-hover`    | `#27272a`   | Hover states (zinc-800)                      |
-| `--border`           | `#3f3f46`   | Borders, dividers (zinc-700)                 |
-| `--text-primary`     | `#fafafa`   | Primary text (zinc-50)                       |
-| `--text-secondary`   | `#a1a1aa`   | Muted text, labels (zinc-400)                |
-| `--accent`           | `#22d3ee`   | Primary accent — cyan-400                    |
-| `--accent-hover`     | `#06b6d4`   | Accent hover — cyan-500                      |
-| `--status-available` | `#4ade80`   | Available badge — green-400                  |
-| `--status-in-use`    | `#facc15`   | In Use badge — yellow-400                    |
-| `--status-repair`    | `#f87171`   | Repair badge — red-400                       |
-| `--danger`           | `#ef4444`   | Destructive actions — red-500                |
+| Token                | Hex       | Usage                             |
+| -------------------- | --------- | --------------------------------- |
+| `--background`       | `#09090b` | App background (zinc-950)         |
+| `--surface`          | `#18181b` | Cards, sidebar, modals (zinc-900) |
+| `--surface-hover`    | `#27272a` | Hover states (zinc-800)           |
+| `--border`           | `#3f3f46` | Borders, dividers (zinc-700)      |
+| `--text-primary`     | `#fafafa` | Primary text (zinc-50)            |
+| `--text-secondary`   | `#a1a1aa` | Muted text, labels (zinc-400)     |
+| `--accent`           | `#22d3ee` | Primary accent — cyan-400         |
+| `--accent-hover`     | `#06b6d4` | Accent hover — cyan-500           |
+| `--status-available` | `#4ade80` | Available badge — green-400       |
+| `--status-in-use`    | `#facc15` | In Use badge — yellow-400         |
+| `--status-repair`    | `#f87171` | Repair badge — red-400            |
+| `--danger`           | `#ef4444` | Destructive actions — red-500     |
 
 ### Typography
 
-| Role        | Font                                               | Weight     | Size       |
-| ----------- | -------------------------------------------------- | ---------- | ---------- |
-| **Display** | `"JetBrains Mono"` (monospace, techy feel)         | 700        | 24-32px    |
-| **Headings**| `"JetBrains Mono"`                                 | 600        | 18-24px    |
-| **Body**    | `"Geist Sans"` (clean, modern, Vercel's typeface)  | 400 / 500  | 14-16px    |
-| **Mono**    | `"JetBrains Mono"`                                 | 400        | 13-14px    |
+| Role         | Font                                              | Weight    | Size    |
+| ------------ | ------------------------------------------------- | --------- | ------- |
+| **Display**  | `"JetBrains Mono"` (monospace, techy feel)        | 700       | 24-32px |
+| **Headings** | `"JetBrains Mono"`                                | 600       | 18-24px |
+| **Body**     | `"Geist Sans"` (clean, modern, Vercel's typeface) | 400 / 500 | 14-16px |
+| **Mono**     | `"JetBrains Mono"`                                | 400       | 13-14px |
 
 ### Icons
 
 All icons from **Lucide**. Key mappings:
 
-| Context             | Icon              |
-| ------------------- | ----------------- |
-| Hardware List       | `Monitor`         |
-| My Rentals          | `Package`         |
-| Admin Panel         | `Shield`          |
-| Add Device          | `Plus`            |
-| Edit                | `Pencil`          |
-| Delete              | `Trash2`          |
-| Repair              | `Wrench`          |
-| Rent                | `ArrowRightLeft`  |
-| Return              | `Undo2`           |
-| Search              | `Search`          |
-| AI Search           | `Sparkles`        |
-| User                | `User`            |
-| Logout              | `LogOut`          |
-| Status: Available   | `CircleCheck`     |
-| Status: In Use      | `Clock`           |
-| Status: Repair      | `AlertTriangle`   |
+| Context           | Icon             |
+| ----------------- | ---------------- |
+| Hardware List     | `Monitor`        |
+| My Rentals        | `Package`        |
+| Admin Panel       | `Shield`         |
+| Add Device        | `Plus`           |
+| Edit              | `Pencil`         |
+| Delete            | `Trash2`         |
+| Repair            | `Wrench`         |
+| Rent              | `ArrowRightLeft` |
+| Return            | `Undo2`          |
+| Search            | `Search`         |
+| AI Search         | `Sparkles`       |
+| User              | `User`           |
+| Logout            | `LogOut`         |
+| Status: Available | `CircleCheck`    |
+| Status: In Use    | `Clock`          |
+| Status: Repair    | `AlertTriangle`  |
 
 ### Layout
 
