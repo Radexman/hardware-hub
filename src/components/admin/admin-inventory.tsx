@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { LayoutGrid, List, Sparkles } from "lucide-react";
+import { LayoutGrid, List, Search } from "lucide-react";
 
+import { AddDeviceDialog } from "@/components/admin/add-device-dialog";
+import { AdminItemActions } from "@/components/admin/admin-item-actions";
+import { ItemCard, type ItemCardView } from "@/components/items/item-card";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
-import { ItemCard, type ItemCardView } from "@/components/items/item-card";
-import { RentButton } from "@/components/items/actions";
 import type { Item, ItemStatus } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
@@ -57,7 +58,13 @@ function compareItems(a: Item, b: Item, sortKey: SortKey): number {
 const ACTIVE_BUTTON =
   "bg-brand text-brand-foreground border-brand hover:bg-brand/90 hover:text-brand-foreground";
 
-export function HardwareList({ items }: { items: Item[] }) {
+export function AdminInventory({
+  items,
+  brandOptions,
+}: {
+  items: Item[];
+  brandOptions: string[];
+}) {
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [view, setView] = useState<ItemCardView>("grid");
@@ -72,23 +79,26 @@ export function HardwareList({ items }: { items: Item[] }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-col gap-1">
-        <h1 className="font-mono text-2xl font-bold tracking-tight">
-          Hardware List
-        </h1>
-        <p className="text-muted-foreground text-sm">
-          Browse and rent available equipment
-        </p>
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div className="flex flex-col gap-1">
+          <h1 className="font-mono text-2xl font-bold tracking-tight">
+            Admin Panel
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            Manage the company hardware inventory
+          </p>
+        </div>
+        <AddDeviceDialog brandOptions={brandOptions} />
       </header>
 
       <div className="relative">
-        <Sparkles className="text-brand pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2" />
+        <Search className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2" />
         <Input
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search hardware..."
-          aria-label="Search hardware"
+          placeholder="Search inventory..."
+          aria-label="Search inventory"
           className="h-11 pl-10"
         />
       </div>
@@ -155,7 +165,7 @@ export function HardwareList({ items }: { items: Item[] }) {
               key={item.id}
               item={item}
               view="grid"
-              action={item.status === "AVAILABLE" ? <RentButton /> : undefined}
+              action={<AdminItemActions />}
             />
           ))}
         </div>
@@ -166,7 +176,7 @@ export function HardwareList({ items }: { items: Item[] }) {
               key={item.id}
               item={item}
               view="list"
-              action={item.status === "AVAILABLE" ? <RentButton /> : undefined}
+              action={<AdminItemActions />}
             />
           ))}
         </div>
