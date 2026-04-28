@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { LayoutGrid, List, Search } from "lucide-react";
+import { Search } from "lucide-react";
 
 import { AddDeviceDialog } from "@/components/admin/add-device-dialog";
 import { AdminItemActions } from "@/components/admin/admin-item-actions";
 import { ItemCard, type ItemCardView } from "@/components/items/item-card";
+import { ViewToggle } from "@/components/items/view-toggle";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
@@ -128,30 +129,7 @@ export function AdminInventory({
           </ButtonGroup>
         </div>
 
-        <ButtonGroup aria-label="View mode">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setView("grid")}
-            aria-pressed={view === "grid"}
-            aria-label="Grid view"
-            className={cn(view === "grid" && ACTIVE_BUTTON)}
-          >
-            <LayoutGrid />
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setView("list")}
-            aria-pressed={view === "list"}
-            aria-label="List view"
-            className={cn(view === "list" && ACTIVE_BUTTON)}
-          >
-            <List />
-          </Button>
-        </ButtonGroup>
+        <ViewToggle value={view} onChange={setView} />
       </div>
 
       {visible.length === 0 ? (
