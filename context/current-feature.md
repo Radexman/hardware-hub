@@ -1,30 +1,18 @@
-# Current Feature: Database Seed Script
+# Current Feature
 
-Create a Prisma seed script (`prisma/seed.ts`) that populates the dev database with the admin/regular user accounts and the mock items + rental history used by the dashboard today.
+<!-- Feature name and short description -->
 
 ## Status
 
-In Progress
+<!-- Not Started | In Progress | Completed -->
 
 ## Goals
 
-- Add a `prisma/seed.ts` script wired into Prisma 7's seed configuration so it can be run via `prisma db seed`
-- Hash passwords with `bcryptjs` (12 rounds) — install the dependency
-- Seed an **admin** user: `admin@booksy.com` / "Alex Admin" / password `admin123` / role `ADMIN` / `emailVerified` = now
-- Seed a **regular** user: `j.doe@booksy.com` / "John Doe" / password `user123` / role `USER` / `emailVerified` = now
-- Seed all items from `@src/lib/mock-data.ts` into the `Item` table
-- Seed the rental history entries from `@src/lib/mock-data.ts` into the `RentalHistory` table, remapping the mock userIds to the real created user IDs
-- Make the script idempotent (use upserts on stable keys like email) so re-running doesn't duplicate rows
+<!-- Goals and requirements -->
 
 ## Notes
 
-- Prisma 7 changed seeding: it no longer runs automatically with `migrate`. The seed entry point must be declared in `prisma.config.ts` (or `package.json`'s `prisma.seed`) and invoked via `npx prisma db seed`.
-- `mock-data.ts` references a third user `a.smith@booksy.com` on item 10 + rental history (`user_asmith`). The spec only defines two users (admin + j.doe). Decision needed at `start` time: (a) add Alice Smith as a third seed user, (b) reassign item 10 / Alice's history to j.doe, or (c) drop those entries. **Default plan: add Alice Smith** so the existing dashboard data renders unchanged — confirm at start.
-- Mock `rentalHistory` uses string userIds (`user_jdoe`, `user_asmith`) that don't match Prisma `cuid()` IDs. Map them to real user IDs after the user upserts.
-- Item 10's `assignedTo` is `a.smith@booksy.com`, requiring that user to exist before the item insert — order matters: users → items → rental history.
-- Plain-text passwords (`admin123`, `user123`) are dev-only fixture credentials. Do not document them in committed README until later phases consciously do so.
-- Run order: ensure migrations are applied (`prisma migrate dev` or `deploy`) before seeding so the tables exist.
-- Out of scope here: the data-quality fixes mentioned in `project-overview.md` (duplicate IDs, future dates, brand typos) — those came from a different draft list and are not in `mock-data.ts`.
+<!-- Any extra notes -->
 
 ## History
 
@@ -37,3 +25,4 @@ In Progress
 - 2026-04-27 — Refined UI: swapped Geist Mono → JetBrains Mono and renamed font CSS variables to `--font-sans`/`--font-mono` (headings now mono); added a `--brand` cyan-400 token and applied `text-brand`/`bg-brand` to the logo, search icon, avatar fallback, active sort button, assigned-to email, and Rent button; replaced `SidebarRail` with an explicit `SidebarTrigger` in the sidebar header; ItemCard gained a per-status right-edge stripe (`border-r-4`), subtle hover lift + shadow, and a decorative Rent button on AVAILABLE items only.
 - 2026-04-27 — Item Cards: added shadcn `button-group` primitive; flipped the per-status card stripe from the right edge to the left edge; regrouped grid-card content into header / meta / body / action sections with `mt-auto` Rent for cross-card alignment; introduced a `view` prop on `ItemCard` plus a list-row layout (inline name · brand · date · assigned with truncated notes underneath); converted the sort controls into a segmented `ButtonGroup` and added a `LayoutGrid` / `List` view-mode toggle on the right of the toolbar with active state in the cyan brand color.
 - 2026-04-28 — Prisma + Neon Postgres: installed Prisma 7 with the new `prisma-client` generator (output to `src/generated/prisma`, gitignored) + `@prisma/adapter-neon` over `@neondatabase/serverless`; added `prisma.config.ts` reading `DATABASE_URL` from `.env`; authored the initial schema (User, Item, RentalHistory + Role/ItemStatus/RentalAction enums, NextAuth Account/Session/VerificationToken, indexes, cascade deletes); created `src/lib/prisma.ts` with a globalThis singleton; bumped `tsconfig` `target` to ES2023; generated and applied the `init` migration to the Neon dev branch.
+- 2026-04-28 — Database Seed: wired `migrations.seed` in `prisma.config.ts` to `tsx prisma/seed.ts`; added `bcryptjs` (12-round hashing); authored an idempotent `prisma/seed.ts` that upserts admin (`admin@booksy.com`), `j.doe@booksy.com`, and `a.smith@booksy.com` (added so item_10 and existing rental history FKs resolve), then upserts all 11 mock items and 5 rental history entries from `src/lib/mock-data.ts` using their stable string IDs.
