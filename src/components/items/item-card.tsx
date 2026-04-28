@@ -1,6 +1,6 @@
-import { ArrowRightLeft, Calendar } from "lucide-react";
+import type { ReactNode } from "react";
+import { Calendar, Clock } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import type { Item, ItemStatus } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
@@ -30,7 +30,7 @@ const DATE_FMT = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
 });
 
-function formatPurchaseDate(value: string | null): string {
+function formatDate(value: string | null): string {
   if (!value) return "Unknown";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
@@ -51,23 +51,31 @@ function StatusBadge({ status }: { status: ItemStatus }) {
   );
 }
 
-function RentButton() {
+function DueLine({ due }: { due: string }) {
   return (
-    <Button
-      type="button"
-      size="sm"
-      className="bg-brand text-brand-foreground hover:bg-brand/90"
-    >
-      <ArrowRightLeft />
-      Rent
-    </Button>
+    <span className="text-foreground inline-flex items-center gap-1.5 text-xs font-medium">
+      <Clock className="size-3.5" />
+      Due {formatDate(due)}
+    </span>
   );
 }
 
 const CARD_BASE =
   "bg-card text-card-foreground border-border rounded-lg border border-l-4 transition-all duration-200";
 
-function GridCard({ item }: { item: Item }) {
+type CommonProps = {
+  item: Item;
+  due?: string | null;
+  showAssignee?: boolean;
+  action?: ReactNode;
+};
+
+function GridCard({
+  item,
+  due,
+  showAssignee = true,
+  action,
+}: CommonProps) {
   return (
     <article
       className={cn(
@@ -88,13 +96,15 @@ function GridCard({ item }: { item: Item }) {
         <span className="text-muted-foreground/40">·</span>
         <span className="inline-flex items-center gap-1.5">
           <Calendar className="size-3.5" />
-          {formatPurchaseDate(item.purchaseDate)}
+          {formatDate(item.purchaseDate)}
         </span>
       </div>
 
-      {(item.assignedTo || item.notes) && (
+      {due ? <DueLine due={due} /> : null}
+
+      {(showAssignee && item.assignedTo) || item.notes ? (
         <div className="flex flex-col gap-2">
-          {item.assignedTo ? (
+          {showAssignee && item.assignedTo ? (
             <p className="text-xs">
               <span className="text-muted-foreground">Assigned to: </span>
               <span className="text-brand">{item.assignedTo}</span>
@@ -106,18 +116,19 @@ function GridCard({ item }: { item: Item }) {
             </p>
           ) : null}
         </div>
-      )}
-
-      {item.status === "AVAILABLE" ? (
-        <div className="mt-auto pt-1">
-          <RentButton />
-        </div>
       ) : null}
+
+      {action ? <div className="mt-auto pt-1">{action}</div> : null}
     </article>
   );
 }
 
-function ListCard({ item }: { item: Item }) {
+function ListCard({
+  item,
+  due,
+  showAssignee = true,
+  action,
+}: CommonProps) {
   return (
     <article
       className={cn(
@@ -133,15 +144,21 @@ function ListCard({ item }: { item: Item }) {
           <span className="text-muted-foreground/40 text-xs">·</span>
           <span className="text-muted-foreground inline-flex items-center gap-1 text-xs">
             <Calendar className="size-3.5" />
-            {formatPurchaseDate(item.purchaseDate)}
+            {formatDate(item.purchaseDate)}
           </span>
-          {item.assignedTo ? (
+          {showAssignee && item.assignedTo ? (
             <>
               <span className="text-muted-foreground/40 text-xs">·</span>
               <span className="text-xs">
                 <span className="text-muted-foreground">Assigned to </span>
                 <span className="text-brand">{item.assignedTo}</span>
               </span>
+            </>
+          ) : null}
+          {due ? (
+            <>
+              <span className="text-muted-foreground/40 text-xs">·</span>
+              <DueLine due={due} />
             </>
           ) : null}
         </div>
@@ -154,7 +171,7 @@ function ListCard({ item }: { item: Item }) {
 
       <StatusBadge status={item.status} />
 
-      {item.status === "AVAILABLE" ? <RentButton /> : null}
+      {action}
     </article>
   );
 }
@@ -162,9 +179,23 @@ function ListCard({ item }: { item: Item }) {
 export function ItemCard({
   item,
   view = "grid",
-}: {
-  item: Item;
-  view?: ItemCardView;
-}) {
-  return view === "list" ? <ListCard item={item} /> : <GridCard item={item} />;
+  due,
+  showAssignee,
+  action,
+}: CommonProps & { view?: ItemCardView }) {
+  return view === "list" ? (
+    <ListCard
+      item={item}
+      due={due}
+      showAssignee={showAssignee}
+      action={action}
+    />
+  ) : (
+    <GridCard
+      item={item}
+      due={due}
+      showAssignee={showAssignee}
+      action={action}
+    />
+  );
 }

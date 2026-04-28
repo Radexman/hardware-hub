@@ -1,18 +1,40 @@
-# Current Feature
+# Current Feature: Admin Panel — Phase 1 (Inventory)
 
-<!-- Feature name and short description -->
+Build the `/admin` route as an inventory-management view that reuses the existing card-based hardware UI (no table). Add a placeholder "Add Device" dialog with a validated form that only logs on submit. All per-card admin actions (Edit / Delete / Toggle Repair) are non-interactive in this phase. User management is out of scope (lands in Phase 2).
 
 ## Status
 
-<!-- Not Started | In Progress | Completed -->
+In Progress
 
 ## Goals
 
-<!-- Goals and requirements -->
+- Add `/admin` route inside the `(app)` route group so it shares the sidebar layout
+- Async server component that fetches all items from the existing Prisma-backed catalogue (`getItems()` from `src/lib/db/items.ts`) — no separate data path
+- Render the inventory using the existing card pattern (grid + list view-mode toggle), per-status left border, and the cyan-accent active control styling
+- Keep the existing search + Name/Brand/Date/Status sort UX from `HardwareList`
+- Per-card admin action affordances: Edit / Delete / Toggle Repair — visual placeholders only in this phase
+- "Add Device" cyan button in the admin toolbar that opens a shadcn Dialog
+- Form fields: Name (text), Brand (select), Purchase Date (date), Status (select), Notes (textarea, optional). Validation: required fields enforced, status restricted to the enum (`AVAILABLE | IN_USE | REPAIR`)
+- Submit handler `console.log`s the validated payload — no persistence yet
+- Loading skeleton for the inventory fetch via Suspense boundary
+- Install only the shadcn primitives we don't already have: `dialog`, `form`, `input`, `select`, `textarea`, `label` (plus `react-hook-form`, `zod`, `@hookform/resolvers`)
 
 ## Notes
 
-<!-- Any extra notes -->
+- **Reuse vs. duplicate (key decision for `/feature start`).** The spec says "Reuse existing components where possible / Favor composition over duplicated card logic." Three options to surface at start:
+    1. **(Recommended) Extract a shared `src/components/items/item-card.tsx`** with an `action?: ReactNode` slot, port the existing dashboard card there, and convert hardware-list, my-rentals, and admin to all use it. Pays the refactor cost once for three consumers.
+    2. **Add an admin variant to the existing dashboard card via a discriminated prop** (e.g. `actions: "rent" | "admin"`), and use a separate copy for my-rentals as today. Less moving, but the dashboard card grows special cases.
+    3. **Triplicate** — copy the dashboard card again into `src/components/admin/item-card.tsx`. Matches the my-rentals approach but locks in 3x duplication.
+
+  My recommendation is (1) since the spec explicitly favors composition and we now have a third consumer.
+- Filters: project-overview lists Status/Brand filters but the current Hardware List does not implement them. The spec says "Keep current search/filter UX" — so keep the current behavior (search input + Name/Brand/Date/Status sort) and don't introduce filter dropdowns in this phase. Confirm at start.
+- "Brand" select options: not specified. Default plan: derive distinct brands from the seeded items (server-fetched, passed as a prop into the client form), sorted alphabetically. If recruiters need a brand not in the list, that's a follow-up. Confirm at start.
+- Form stack: shadcn `Form` is the react-hook-form + zod pattern. Install those packages alongside the shadcn primitives.
+- Loading skeleton: server components don't have a "loading" state per se — implement via a `<Suspense fallback={<InventorySkeleton />}>` wrapper around the data-fetched section. Skeleton can be a small set of placeholder cards in the same grid layout.
+- "Add Device" submit only `console.log`s for this phase. No Server Action, no toast, no DB write. The schema/CRUD wiring will live in Phase 2 alongside actual rent/return.
+- Per-card admin actions are decorative — render the icon buttons (Pencil, Trash2, Wrench) but with no `onClick`. Use shadcn `Tooltip` only if it's already installed (it is — used by sidebar).
+- The sidebar already has the `/admin` link in `AppSidebar`'s `NAV_ITEMS`, so navigation Just Works once the route exists.
+- Out of scope: actual edit/delete/repair-toggle handlers, brand filter dropdown, status filter dropdown, AI semantic search, user management (Phase 2), schema changes, server actions for items.
 
 ## History
 

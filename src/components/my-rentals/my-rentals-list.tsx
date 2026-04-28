@@ -5,7 +5,8 @@ import { LayoutGrid, List } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
-import { ItemCard, type ItemCardView } from "@/components/my-rentals/item-card";
+import { ItemCard, type ItemCardView } from "@/components/items/item-card";
+import { ReturnButton } from "@/components/items/actions";
 import type { Item } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
@@ -69,6 +70,8 @@ export function MyRentalsList({ items }: { items: Item[] }) {
               item={item}
               view="grid"
               due={item.returnDate}
+              showAssignee={false}
+              action={<ReturnButton />}
             />
           ))}
         </div>
@@ -80,6 +83,8 @@ export function MyRentalsList({ items }: { items: Item[] }) {
               item={item}
               view="list"
               due={item.returnDate}
+              showAssignee={false}
+              action={<ReturnButton />}
             />
           ))}
         </div>
