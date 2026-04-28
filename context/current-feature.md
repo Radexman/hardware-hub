@@ -1,18 +1,35 @@
-# Current Feature
+# Current Feature: My Rentals UI Page
 
-<!-- Feature name and short description -->
+Build the `/my-rentals` page UI showing the current user's currently rented items, with the same grid/list view toggle pattern as the hardware list and a (no-op) Return button on each card. Extract the item-view components into a reusable layer so hardware list, my rentals, and the future admin panel can all share them.
 
 ## Status
 
-<!-- Not Started | In Progress | Completed -->
+In Progress
 
 ## Goals
 
-<!-- Goals and requirements -->
+- Add a `/my-rentals` route with the dashboard layout (sidebar + main slot already shared via the dashboard segment)
+- Add a `getMyRentals(userEmail)` (or similar) data-fetching function in `src/lib/db/` that returns the currently-rented items for a given user — items where `assignedTo = email` AND `status = IN_USE`
+- Page is an async server component that fetches the current user's rentals and renders them
+- Reusable item-view layer: extract the visual `ItemCard` (grid + list variants) and the view-mode toggle into shared components under `src/components/items/` so hardware list, my rentals, and future admin panel can reuse them
+- Refactor `HardwareList` to use the shared components without visual regressions
+- Two display modes (grid + list) on My Rentals via the shared view toggle
+- Each rented card shows the return deadline and a Return button that does nothing (placeholder for the future rent/return server action)
 
 ## Notes
 
-<!-- Any extra notes -->
+- **No auth yet.** "Current user" needs a stand-in. Default plan: hardcode `j.doe@booksy.com` (a seeded user with `item_2` rented) as the current user via a single helper like `getCurrentUserEmail()` in `src/lib/auth.ts` (or inline in the page). Replace once NextAuth lands. Confirm at start.
+- Reusable components — proposed layout under `src/components/items/`:
+    - `item-card.tsx` — current grid/list `ItemCard` moved here, made action-agnostic via an optional `action?: ReactNode` slot (callers pass `<RentButton />` or `<ReturnButton />`)
+    - `item-view-toggle.tsx` — segmented grid/list `ButtonGroup`
+    - `item-grid.tsx` / `item-list.tsx` (optional) — small render helpers if it removes duplication; otherwise keep grid/list rendering inline at each call site
+- The existing `dashboard/item-card.tsx` would either move or be deleted in favor of the shared component. `dashboard/hardware-list.tsx` becomes a thin client wrapper that owns search + sort + view + brings its own action (Rent).
+- My Rentals does **not** need search or sort per the spec — only the view-mode toggle. Keep it simple.
+- Return button must be visible but inert. No Server Action yet, no toast — pure UI.
+- Show return deadline on the card prominently when rendering in "rentals" mode (currently the card only shows it implicitly via the underlying data). Decide at start: extend the card with an optional "deadline" line, or pass it through `notes`-like prop. Default: small extension to the card, conditionally shown when `returnDate` is set and `view === "list"` or "grid".
+- Server component should opt into dynamic rendering (`export const dynamic = "force-dynamic"`) like the dashboard does, since rentals are user-specific and live.
+- Out of scope: actual Return action (CRUD), pagination, filters, return-deadline-pulse animation, NextAuth wiring, "no rentals" empty-state copy beyond a basic message.
+- The `My Rentals` sidebar nav link already exists in `AppSidebar`; we only need to make the route real.
 
 ## History
 

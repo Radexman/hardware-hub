@@ -44,7 +44,7 @@ export function AppSidebar() {
       <SidebarHeader>
         <div className="flex items-center justify-between gap-2 group-data-[collapsible=icon]:justify-center">
           <Link
-            href="/dashboard"
+            href="/hardware"
             className="flex items-center gap-2 px-2 py-1.5 group-data-[collapsible=icon]:hidden"
           >
             <Wrench className="text-brand size-5 shrink-0" />
