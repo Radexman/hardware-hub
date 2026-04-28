@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Hardware Hub
 
-## Getting Started
+An AI-powered internal tool for managing, renting, and maintaining company equipment at Booksy. Built as a recruitment-task deliverable.
 
-First, run the development server:
+> Submitted as a recruitment task. The seed data, user accounts, and demo credentials below are intentional fixtures meant for review.
+
+## Demo accounts
+
+The seeded database ships with three accounts. Use these to log in once authentication is wired up. All emails resolve to the seeded users — the passwords are stored as 12-round bcrypt hashes in the database.
+
+| Role  | Email                | Password   | Notes                                                                |
+| ----- | -------------------- | ---------- | -------------------------------------------------------------------- |
+| Admin | `admin@booksy.com`   | `admin123` | "Alex Admin". Full CRUD + user management.                            |
+| User  | `j.doe@booksy.com`   | `user123`  | "John Doe". Currently has `Apple MacBook Pro 13` rented.              |
+| User  | `a.smith@booksy.com` | `user123`  | "Alice Smith". Currently has `Sony WH-1000XM4` rented.                |
+
+> ⚠️ These credentials exist purely so reviewers can sign in. They are **not** suitable for any real deployment.
+
+## Quick start
+
+Prerequisites: Node 20.19+, a Neon Postgres database, and a `.env` file with `DATABASE_URL` set to the dev branch connection string.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npx prisma generate            # build the Prisma client into src/generated/prisma
+npx prisma migrate dev         # apply schema migrations to the dev branch
+npx prisma db seed             # populate the database with the demo data
+npm run dev                    # start the Next.js dev server at http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+After seeding, visit [http://localhost:3000/hardware](http://localhost:3000/hardware) for the hardware list and [http://localhost:3000/my-rentals](http://localhost:3000/my-rentals) for the (currently hardcoded) John Doe's active rentals.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Useful scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Script                          | What it does                                                |
+| ------------------------------- | ----------------------------------------------------------- |
+| `npm run dev`                   | Next.js dev server (Turbopack)                              |
+| `npm run build`                 | Production build                                            |
+| `npm run lint`                  | ESLint (flat config, v9)                                    |
+| `npx prisma migrate dev`        | Apply schema migrations against the dev Neon branch         |
+| `npx prisma db seed`            | Run the seed script against the dev Neon branch (idempotent)|
+| `npx tsx scripts/test-db.ts`    | Print users / items / rental history from the dev branch    |
+| `npm run db:migrate:deploy:prod`| Apply migrations against the prod branch (`.env.production`) |
+| `npm run db:seed:prod`          | Run the seed against the prod branch                        |
+| `npm run db:test:prod`          | Print users / items / rental history from the prod branch   |
 
-## Learn More
+The `*:prod` scripts pipe `.env.production` through `dotenv-cli`, so the prod target is always explicit — there's no implicit "current env" to mistake for prod.
 
-To learn more about Next.js, take a look at the following resources:
+## Tech stack
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Next.js 16** (App Router, Turbopack) + **React 19** + **TypeScript**
+- **Tailwind CSS v4** + **shadcn/ui** (dark mode by default) + **Lucide** icons
+- **Prisma 7** with the `prisma-client` generator and `@prisma/adapter-neon` over `@neondatabase/serverless`
+- **Neon** serverless Postgres (separate dev and prod branches)
+- **bcryptjs** for password hashing
+- Auth, AI semantic search, tests, and the admin panel are pending in later phases
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## TODO (later README passes)
 
-## Deploy on Vercel
+These will land as the matching features ship:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [ ] Implementation status table (what works / what's mocked)
+- [ ] Trade-offs and design decisions
+- [ ] AI development log — prompts and decisions
+- [ ] Screenshots of the live UI
+- [ ] Deployed-URL link for reviewers
+- [ ] Test plan + how to run the test suite
+- [ ] Notes on the seed-data quality fixes from `context/project-overview.md`
