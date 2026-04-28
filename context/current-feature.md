@@ -1,40 +1,18 @@
-# Current Feature: Admin Panel — Phase 1 (Inventory)
+# Current Feature
 
-Build the `/admin` route as an inventory-management view that reuses the existing card-based hardware UI (no table). Add a placeholder "Add Device" dialog with a validated form that only logs on submit. All per-card admin actions (Edit / Delete / Toggle Repair) are non-interactive in this phase. User management is out of scope (lands in Phase 2).
+<!-- Feature name and short description -->
 
 ## Status
 
-In Progress
+<!-- Not Started | In Progress | Completed -->
 
 ## Goals
 
-- Add `/admin` route inside the `(app)` route group so it shares the sidebar layout
-- Async server component that fetches all items from the existing Prisma-backed catalogue (`getItems()` from `src/lib/db/items.ts`) — no separate data path
-- Render the inventory using the existing card pattern (grid + list view-mode toggle), per-status left border, and the cyan-accent active control styling
-- Keep the existing search + Name/Brand/Date/Status sort UX from `HardwareList`
-- Per-card admin action affordances: Edit / Delete / Toggle Repair — visual placeholders only in this phase
-- "Add Device" cyan button in the admin toolbar that opens a shadcn Dialog
-- Form fields: Name (text), Brand (select), Purchase Date (date), Status (select), Notes (textarea, optional). Validation: required fields enforced, status restricted to the enum (`AVAILABLE | IN_USE | REPAIR`)
-- Submit handler `console.log`s the validated payload — no persistence yet
-- Loading skeleton for the inventory fetch via Suspense boundary
-- Install only the shadcn primitives we don't already have: `dialog`, `form`, `input`, `select`, `textarea`, `label` (plus `react-hook-form`, `zod`, `@hookform/resolvers`)
+<!-- Goals and requirements -->
 
 ## Notes
 
-- **Reuse vs. duplicate (key decision for `/feature start`).** The spec says "Reuse existing components where possible / Favor composition over duplicated card logic." Three options to surface at start:
-    1. **(Recommended) Extract a shared `src/components/items/item-card.tsx`** with an `action?: ReactNode` slot, port the existing dashboard card there, and convert hardware-list, my-rentals, and admin to all use it. Pays the refactor cost once for three consumers.
-    2. **Add an admin variant to the existing dashboard card via a discriminated prop** (e.g. `actions: "rent" | "admin"`), and use a separate copy for my-rentals as today. Less moving, but the dashboard card grows special cases.
-    3. **Triplicate** — copy the dashboard card again into `src/components/admin/item-card.tsx`. Matches the my-rentals approach but locks in 3x duplication.
-
-  My recommendation is (1) since the spec explicitly favors composition and we now have a third consumer.
-- Filters: project-overview lists Status/Brand filters but the current Hardware List does not implement them. The spec says "Keep current search/filter UX" — so keep the current behavior (search input + Name/Brand/Date/Status sort) and don't introduce filter dropdowns in this phase. Confirm at start.
-- "Brand" select options: not specified. Default plan: derive distinct brands from the seeded items (server-fetched, passed as a prop into the client form), sorted alphabetically. If recruiters need a brand not in the list, that's a follow-up. Confirm at start.
-- Form stack: shadcn `Form` is the react-hook-form + zod pattern. Install those packages alongside the shadcn primitives.
-- Loading skeleton: server components don't have a "loading" state per se — implement via a `<Suspense fallback={<InventorySkeleton />}>` wrapper around the data-fetched section. Skeleton can be a small set of placeholder cards in the same grid layout.
-- "Add Device" submit only `console.log`s for this phase. No Server Action, no toast, no DB write. The schema/CRUD wiring will live in Phase 2 alongside actual rent/return.
-- Per-card admin actions are decorative — render the icon buttons (Pencil, Trash2, Wrench) but with no `onClick`. Use shadcn `Tooltip` only if it's already installed (it is — used by sidebar).
-- The sidebar already has the `/admin` link in `AppSidebar`'s `NAV_ITEMS`, so navigation Just Works once the route exists.
-- Out of scope: actual edit/delete/repair-toggle handlers, brand filter dropdown, status filter dropdown, AI semantic search, user management (Phase 2), schema changes, server actions for items.
+<!-- Any extra notes -->
 
 ## History
 
@@ -51,3 +29,4 @@ In Progress
 - 2026-04-28 — Dashboard Items from DB: added `src/lib/db/items.ts` with `getItems()` that pulls items from Prisma (`orderBy: name asc`) and serializes `purchaseDate`/`returnDate` to ISO date strings to keep the existing `Item` type contract; converted `/dashboard/page.tsx` to an async server component awaiting `getItems()` with `export const dynamic = "force-dynamic"` so each request re-queries Neon; left `mock-data.ts`, `HardwareList`, and `ItemCard` untouched.
 - 2026-04-28 — My Rentals UI + Route Restructure: introduced `(app)` route group so the sidebar layout covers multiple pages; renamed the hardware list route from `/dashboard` to `/hardware` and updated the sidebar logo link accordingly; added `/my-rentals` async server component (force-dynamic) backed by `src/lib/db/rentals.ts` `getMyRentals(email)` which filters items by `assignedTo + IN_USE` and orders by `returnDate`; added `src/lib/auth.ts` `getCurrentUserEmail()` returning `j.doe@booksy.com` as a placeholder until NextAuth lands; copied the dashboard `ItemCard` into `src/components/my-rentals/item-card.tsx` with a Return button (always shown) plus an optional `due` prop rendering a Clock + formatted deadline; built `MyRentalsList` with the same grid/list view-mode toggle as `HardwareList` (no search/sort) and a basic empty state.
 - 2026-04-28 — Prod DB Seed + README: installed `dotenv-cli`; added `db:migrate:deploy:prod`, `db:seed:prod`, `db:test:prod` npm scripts that pipe `.env.production` through dotenv-cli so the prod target is always explicit; applied the existing migration and ran the existing seed against the prod Neon branch (3 users, 11 items, 5 rental history entries — verified via `db:test:prod`); replaced the create-next-app default README with a project README led by a Demo Accounts table (admin/j.doe/a.smith with seeded passwords), followed by quick-start, scripts reference, tech stack, and TODO sections for the fuller README content (status, trade-offs, AI dev log, screenshots).
+- 2026-04-28 — Admin Panel Phase 1 + Card Extraction: extracted the dashboard `ItemCard` to a shared `src/components/items/item-card.tsx` with an `action?: ReactNode` slot, optional `due`, and a `showAssignee` toggle; migrated `HardwareList` (passes `<RentButton />` only when AVAILABLE) and `MyRentalsList` (passes `<ReturnButton />` always + `due` + hides assignee) to the shared card and deleted both duplicate copies; added shared `RentButton`/`ReturnButton` in `src/components/items/actions.tsx`. Installed shadcn `dialog`/`select`/`textarea`/`label` primitives plus `react-hook-form`, `zod`, `@hookform/resolvers` (the shadcn `form` component isn't shipped with the `base-nova` style, so the Add Device dialog wires RHF + zod directly). New `/admin` route inside the `(app)` group: server component wraps `<Suspense fallback={<InventorySkeleton />}>` around an `AdminInventoryLoader` that calls `getItems()`, derives distinct brand options, and renders `AdminInventory` (search + Name/Brand/Date/Status sort + grid/list view toggle, mirroring `HardwareList`). Each card shows a disabled `AdminItemActions` cluster (Edit / Wrench / Delete) and a cyan "Add Device" button in the header opens `AddDeviceDialog` whose zod-validated submit currently `console.log`s the payload and resets the form.
