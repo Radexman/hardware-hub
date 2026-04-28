@@ -1,33 +1,18 @@
-# Current Feature: Admin Panel — Phase 2 (User Management)
+# Current Feature
 
-Add a User Management section underneath the existing Item Management on `/admin`. Scaffolding only: fetch + render users from the DB, grid/list view toggle, per-row Edit/Delete affordances (non-interactive), and a "Create User" dialog whose zod-validated submit only `console.log`s the payload. No DB writes, no auth wiring.
+<!-- Feature name and short description -->
 
 ## Status
 
-In Progress
+<!-- Not Started | In Progress | Completed -->
 
 ## Goals
 
-- Add a `getUsers()` data-fetcher in `src/lib/db/users.ts` returning a UI-safe shape (id, name, email, role, createdAt) — never the password
-- Add a `UserCard` for the grid view and a list-row layout for the Google-Drive-style mode (avatar/initials left, name + email middle, role badge + created date + actions right)
-- Add a `UsersList` client component below `AdminInventory` on `/admin` that fetches via the server component, renders via `<Suspense fallback={<UsersSkeleton />}>`, and owns the grid/list view toggle
-- Per-user actions: Edit + Delete icon buttons, disabled placeholders only
-- "Create User" cyan button in the user-management toolbar opens a shadcn Dialog
-- Form fields: Name (text), Email (email), Password (password), Role (select USER/ADMIN). Validation via zod: required, email format, role enum
-- Submit handler logs the validated payload to the console and resets the form (no DB write)
-- Reuse: extract the now-duplicated grid/list view-mode toggle into a shared component (used by HardwareList, MyRentalsList, AdminInventory, and the new UsersList)
+<!-- Goals and requirements -->
 
 ## Notes
 
-- **View-toggle extraction (decision for `/feature start`).** The grid/list `ButtonGroup` toggle is now duplicated in three components and would be a fourth. Spec explicitly says "Favor composition over duplicated view logic." Default plan: extract `src/components/items/view-toggle.tsx` (named export `<ViewToggle value onChange />`) and migrate the four call sites. Small refactor, mostly mechanical. Confirm or tell me to skip.
-- User shape: define `UserListItem` (id, name, email, role, createdAt) in `src/lib/db/users.ts`. Don't reuse the `User` type from `src/lib/mock-data.ts` — it lacks `createdAt` and was built for the sidebar's `currentUser`, not lists.
-- Role badge: mirror status-badge styling from `ItemCard`. Default plan: ADMIN uses the cyan `--brand` color, USER uses a muted neutral. No left-edge border stripe on user cards (status border is item-specific signal — keep neutral).
-- Password field shown but `type="password"`. Browser autocomplete should be "new-password". Validation: zod `.min(1, "Password is required")` (spec only requires "required" — no min length, no complexity, since it's not really wired up).
-- Loading skeleton: parallel to `InventorySkeleton`. Add `UsersSkeleton` (a few placeholder rows + a couple of placeholder cards). Keep it small.
-- Place the User Management section visually below Item Management on `/admin`. The page becomes two `<Suspense>`-bounded blocks rendering sequentially.
-- The List view is "Google Drive style": flat row, avatar on left, hover-only actions could be later — for this phase show actions inline and persistent.
-- Grid card: shows name (bold), email (muted), role badge top-right, created date bottom muted, Edit/Delete cluster bottom-right. No left-edge border stripe.
-- Out of scope: real Create/Edit/Delete CRUD, password hashing on the client, server actions, auth-gated visibility (assume admin always sees this), pagination, sort, search, filters.
+<!-- Any extra notes -->
 
 ## History
 
@@ -45,3 +30,4 @@ In Progress
 - 2026-04-28 — My Rentals UI + Route Restructure: introduced `(app)` route group so the sidebar layout covers multiple pages; renamed the hardware list route from `/dashboard` to `/hardware` and updated the sidebar logo link accordingly; added `/my-rentals` async server component (force-dynamic) backed by `src/lib/db/rentals.ts` `getMyRentals(email)` which filters items by `assignedTo + IN_USE` and orders by `returnDate`; added `src/lib/auth.ts` `getCurrentUserEmail()` returning `j.doe@booksy.com` as a placeholder until NextAuth lands; copied the dashboard `ItemCard` into `src/components/my-rentals/item-card.tsx` with a Return button (always shown) plus an optional `due` prop rendering a Clock + formatted deadline; built `MyRentalsList` with the same grid/list view-mode toggle as `HardwareList` (no search/sort) and a basic empty state.
 - 2026-04-28 — Prod DB Seed + README: installed `dotenv-cli`; added `db:migrate:deploy:prod`, `db:seed:prod`, `db:test:prod` npm scripts that pipe `.env.production` through dotenv-cli so the prod target is always explicit; applied the existing migration and ran the existing seed against the prod Neon branch (3 users, 11 items, 5 rental history entries — verified via `db:test:prod`); replaced the create-next-app default README with a project README led by a Demo Accounts table (admin/j.doe/a.smith with seeded passwords), followed by quick-start, scripts reference, tech stack, and TODO sections for the fuller README content (status, trade-offs, AI dev log, screenshots).
 - 2026-04-28 — Admin Panel Phase 1 + Card Extraction: extracted the dashboard `ItemCard` to a shared `src/components/items/item-card.tsx` with an `action?: ReactNode` slot, optional `due`, and a `showAssignee` toggle; migrated `HardwareList` (passes `<RentButton />` only when AVAILABLE) and `MyRentalsList` (passes `<ReturnButton />` always + `due` + hides assignee) to the shared card and deleted both duplicate copies; added shared `RentButton`/`ReturnButton` in `src/components/items/actions.tsx`. Installed shadcn `dialog`/`select`/`textarea`/`label` primitives plus `react-hook-form`, `zod`, `@hookform/resolvers` (the shadcn `form` component isn't shipped with the `base-nova` style, so the Add Device dialog wires RHF + zod directly). New `/admin` route inside the `(app)` group: server component wraps `<Suspense fallback={<InventorySkeleton />}>` around an `AdminInventoryLoader` that calls `getItems()`, derives distinct brand options, and renders `AdminInventory` (search + Name/Brand/Date/Status sort + grid/list view toggle, mirroring `HardwareList`). Each card shows a disabled `AdminItemActions` cluster (Edit / Wrench / Delete) and a cyan "Add Device" button in the header opens `AddDeviceDialog` whose zod-validated submit currently `console.log`s the payload and resets the form.
+- 2026-04-28 — Admin Panel Phase 2 + ViewToggle Extraction: extracted the duplicated grid/list `ButtonGroup` into a shared `src/components/items/view-toggle.tsx` and migrated `HardwareList`, `MyRentalsList`, and `AdminInventory` to use it. Added `src/lib/db/users.ts` `getUsers()` returning a UI-safe `UserListItem` shape (id, name, email, role, createdAt — no password). Built `UserCard` with grid + Google-Drive-style list variants (avatar/initials, name, email, role badge, joined date, action slot), `AdminUserActions` disabled Edit/Delete cluster, `UsersSkeleton`, and `CreateUserDialog` (shadcn Dialog + RHF + zod for Name/Email/Password/Role; submit logs payload + resets). New `UsersList` client component renders the toolbar (count + view toggle + Create User cyan button) and the grid/list. `/admin/page.tsx` now sequentially renders two Suspense-bounded sections: inventory then users.
