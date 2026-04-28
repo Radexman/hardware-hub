@@ -1,18 +1,33 @@
-# Current Feature
+# Current Feature: Prod DB Seed + README Credentials Section
 
-<!-- Feature name and short description -->
+Wire up a clean way to target the production Neon branch from the CLI, run the existing seed against it, and start the project README with a section that documents the demo login credentials for the Booksy recruiters.
 
 ## Status
 
-<!-- Not Started | In Progress | Completed -->
+In Progress
 
 ## Goals
 
-<!-- Goals and requirements -->
+- Add `dotenv-cli` so prisma CLI commands can be run against `.env.production` without renaming files or fiddling with the shell
+- Add npm scripts that make the prod target explicit (one each for migrate-deploy and seed against `.env.production`); keep the dev flow working as-is
+- Apply the existing init migration to the prod Neon branch
+- Run the existing `prisma/seed.ts` against the prod branch so it has the same 3 users + 11 items + 5 rental history rows the dev branch has
+- Verify the prod branch contents (e.g. via the existing `scripts/test-db.ts`, pointed at prod via dotenv-cli)
+- Create an initial `README.md` containing: project name + one-paragraph intro, a quick-start section, and a clearly-headed "Demo accounts" / "Login credentials" section listing admin + both regular users with their seeded passwords
 
 ## Notes
 
-<!-- Any extra notes -->
+- This is a Booksy recruitment-task deliverable, not a real production system. Hardcoded plaintext fixture passwords (`admin123`, `user123`) are intentional — recruiters need them to log in. Document them prominently in the README so that's the first place reviewers find them.
+- `.env.production` already exists locally with the prod connection string. `.env*` is gitignored, so neither `.env` nor `.env.production` get committed. The README will list the credentials in plaintext because that's the expected reviewer experience here.
+- The seed is idempotent (upserts on stable keys), so re-running against prod is safe.
+- Order of ops on first prod deploy: `prisma migrate deploy` first (so tables exist), then `prisma db seed`.
+- Suggested npm scripts (final names TBD at start):
+    - `db:migrate:deploy:prod` → `dotenv -e .env.production -- prisma migrate deploy`
+    - `db:seed:prod` → `dotenv -e .env.production -- prisma db seed`
+    - Optional: a `db:test:prod` that runs `scripts/test-db.ts` against prod, mirroring dev usage
+- Keep the dev path identical to today: `npx prisma migrate dev`, `npx prisma db seed`, `npx tsx scripts/test-db.ts` — no behavior change there.
+- README scope for this pass: starter scaffold + credentials section. The full README per `project-overview.md` (implementation status, trade-offs, AI dev log, screenshots, etc.) will land in a later phase — call it out as TODO sections so the structure is in place.
+- Don't accidentally commit `.env.production` itself; only the npm scripts that consume it.
 
 ## History
 
