@@ -1,18 +1,33 @@
-# Current Feature
+# Current Feature: Admin Panel — Phase 2 (User Management)
 
-<!-- Feature name and short description -->
+Add a User Management section underneath the existing Item Management on `/admin`. Scaffolding only: fetch + render users from the DB, grid/list view toggle, per-row Edit/Delete affordances (non-interactive), and a "Create User" dialog whose zod-validated submit only `console.log`s the payload. No DB writes, no auth wiring.
 
 ## Status
 
-<!-- Not Started | In Progress | Completed -->
+In Progress
 
 ## Goals
 
-<!-- Goals and requirements -->
+- Add a `getUsers()` data-fetcher in `src/lib/db/users.ts` returning a UI-safe shape (id, name, email, role, createdAt) — never the password
+- Add a `UserCard` for the grid view and a list-row layout for the Google-Drive-style mode (avatar/initials left, name + email middle, role badge + created date + actions right)
+- Add a `UsersList` client component below `AdminInventory` on `/admin` that fetches via the server component, renders via `<Suspense fallback={<UsersSkeleton />}>`, and owns the grid/list view toggle
+- Per-user actions: Edit + Delete icon buttons, disabled placeholders only
+- "Create User" cyan button in the user-management toolbar opens a shadcn Dialog
+- Form fields: Name (text), Email (email), Password (password), Role (select USER/ADMIN). Validation via zod: required, email format, role enum
+- Submit handler logs the validated payload to the console and resets the form (no DB write)
+- Reuse: extract the now-duplicated grid/list view-mode toggle into a shared component (used by HardwareList, MyRentalsList, AdminInventory, and the new UsersList)
 
 ## Notes
 
-<!-- Any extra notes -->
+- **View-toggle extraction (decision for `/feature start`).** The grid/list `ButtonGroup` toggle is now duplicated in three components and would be a fourth. Spec explicitly says "Favor composition over duplicated view logic." Default plan: extract `src/components/items/view-toggle.tsx` (named export `<ViewToggle value onChange />`) and migrate the four call sites. Small refactor, mostly mechanical. Confirm or tell me to skip.
+- User shape: define `UserListItem` (id, name, email, role, createdAt) in `src/lib/db/users.ts`. Don't reuse the `User` type from `src/lib/mock-data.ts` — it lacks `createdAt` and was built for the sidebar's `currentUser`, not lists.
+- Role badge: mirror status-badge styling from `ItemCard`. Default plan: ADMIN uses the cyan `--brand` color, USER uses a muted neutral. No left-edge border stripe on user cards (status border is item-specific signal — keep neutral).
+- Password field shown but `type="password"`. Browser autocomplete should be "new-password". Validation: zod `.min(1, "Password is required")` (spec only requires "required" — no min length, no complexity, since it's not really wired up).
+- Loading skeleton: parallel to `InventorySkeleton`. Add `UsersSkeleton` (a few placeholder rows + a couple of placeholder cards). Keep it small.
+- Place the User Management section visually below Item Management on `/admin`. The page becomes two `<Suspense>`-bounded blocks rendering sequentially.
+- The List view is "Google Drive style": flat row, avatar on left, hover-only actions could be later — for this phase show actions inline and persistent.
+- Grid card: shows name (bold), email (muted), role badge top-right, created date bottom muted, Edit/Delete cluster bottom-right. No left-edge border stripe.
+- Out of scope: real Create/Edit/Delete CRUD, password hashing on the client, server actions, auth-gated visibility (assume admin always sees this), pagination, sort, search, filters.
 
 ## History
 

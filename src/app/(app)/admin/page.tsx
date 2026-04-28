@@ -2,7 +2,10 @@ import { Suspense } from "react";
 
 import { AdminInventory } from "@/components/admin/admin-inventory";
 import { InventorySkeleton } from "@/components/admin/inventory-skeleton";
+import { UsersList } from "@/components/admin/users-list";
+import { UsersSkeleton } from "@/components/admin/users-skeleton";
 import { getItems } from "@/lib/db/items";
+import { getUsers } from "@/lib/db/users";
 
 export const dynamic = "force-dynamic";
 
@@ -12,10 +15,20 @@ async function AdminInventoryLoader() {
   return <AdminInventory items={items} brandOptions={brandOptions} />;
 }
 
+async function UsersLoader() {
+  const users = await getUsers();
+  return <UsersList users={users} />;
+}
+
 export default function AdminPage() {
   return (
-    <Suspense fallback={<InventorySkeleton />}>
-      <AdminInventoryLoader />
-    </Suspense>
+    <div className="flex flex-col gap-12">
+      <Suspense fallback={<InventorySkeleton />}>
+        <AdminInventoryLoader />
+      </Suspense>
+      <Suspense fallback={<UsersSkeleton />}>
+        <UsersLoader />
+      </Suspense>
+    </div>
   );
 }

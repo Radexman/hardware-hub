@@ -1,17 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { LayoutGrid, List } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
 import { ItemCard, type ItemCardView } from "@/components/items/item-card";
 import { ReturnButton } from "@/components/items/actions";
+import { ViewToggle } from "@/components/items/view-toggle";
 import type { Item } from "@/lib/mock-data";
-import { cn } from "@/lib/utils";
-
-const ACTIVE_BUTTON =
-  "bg-brand text-brand-foreground border-brand hover:bg-brand/90 hover:text-brand-foreground";
 
 export function MyRentalsList({ items }: { items: Item[] }) {
   const [view, setView] = useState<ItemCardView>("grid");
@@ -32,30 +26,7 @@ export function MyRentalsList({ items }: { items: Item[] }) {
           {items.length} {items.length === 1 ? "item" : "items"}
         </span>
 
-        <ButtonGroup aria-label="View mode">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setView("grid")}
-            aria-pressed={view === "grid"}
-            aria-label="Grid view"
-            className={cn(view === "grid" && ACTIVE_BUTTON)}
-          >
-            <LayoutGrid />
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setView("list")}
-            aria-pressed={view === "list"}
-            aria-label="List view"
-            className={cn(view === "list" && ACTIVE_BUTTON)}
-          >
-            <List />
-          </Button>
-        </ButtonGroup>
+        <ViewToggle value={view} onChange={setView} />
       </div>
 
       {items.length === 0 ? (

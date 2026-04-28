@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { LayoutGrid, List, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
 import { ItemCard, type ItemCardView } from "@/components/items/item-card";
 import { RentButton } from "@/components/items/actions";
+import { ViewToggle } from "@/components/items/view-toggle";
 import type { Item, ItemStatus } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
@@ -118,30 +119,7 @@ export function HardwareList({ items }: { items: Item[] }) {
           </ButtonGroup>
         </div>
 
-        <ButtonGroup aria-label="View mode">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setView("grid")}
-            aria-pressed={view === "grid"}
-            aria-label="Grid view"
-            className={cn(view === "grid" && ACTIVE_BUTTON)}
-          >
-            <LayoutGrid />
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setView("list")}
-            aria-pressed={view === "list"}
-            aria-label="List view"
-            className={cn(view === "list" && ACTIVE_BUTTON)}
-          >
-            <List />
-          </Button>
-        </ButtonGroup>
+        <ViewToggle value={view} onChange={setView} />
       </div>
 
       {visible.length === 0 ? (
