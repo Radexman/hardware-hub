@@ -1,18 +1,26 @@
-# Current Feature
+# Current Feature: Dashboard Items from Database
 
-<!-- Feature name and short description -->
+Replace the mock items powering the dashboard's main list with real items fetched from Neon via Prisma. UI stays exactly as it is.
 
 ## Status
 
-<!-- Not Started | In Progress | Completed -->
+In Progress
 
 ## Goals
 
-<!-- Goals and requirements -->
+- Add `src/lib/db/items.ts` with a server-side data-fetching function (e.g. `getItems()`) that returns the items the dashboard needs
+- Fetch items directly in the `/dashboard` server component and pass them to `HardwareList` (no client-side fetch, no Server Action, since we're rendering on initial load)
+- Preserve current dashboard look + behavior — `ItemCard` and `HardwareList` should not need visible changes
+- Switch the dashboard's data source from `@/lib/mock-data` to the new DB function while leaving the rest of `mock-data.ts` (e.g. `currentUser`, `rentalHistory`) alone for now
 
 ## Notes
 
-<!-- Any extra notes -->
+- Prisma returns `purchaseDate` and `returnDate` as `Date | null`, while the existing `Item` type in `src/lib/mock-data.ts` (and the components) uses `string | null`. Two options to surface at start: (a) serialize dates to ISO strings inside `getItems()` so the UI types don't change, or (b) update `ItemCard`/`HardwareList` to accept `Date` objects. **Default plan: (a) serialize in the data layer**, smallest blast radius and matches the existing UI contract.
+- Status values match (`AVAILABLE | IN_USE | REPAIR`) — the Prisma enum is string-compatible so no mapping needed there.
+- The spec says "fetch items directly in the server component", so the dashboard `page.tsx` becomes async and awaits `getItems()`. Don't introduce loading skeletons or Suspense boundaries yet — out of scope.
+- The Neon adapter in `src/lib/prisma.ts` already handles connection pooling for serverless. No new infra needed.
+- Out of scope: pagination, filtering on the server, AI search, write actions (rent/return). The page still renders all items unsorted/unfiltered server-side; the client component owns search/sort/view-toggle as before.
+- Don't delete `mock-data.ts` — the sidebar still consumes `currentUser` and we may keep it as a fixture reference. Consider trimming in a later phase.
 
 ## History
 
