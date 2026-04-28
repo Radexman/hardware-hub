@@ -1,18 +1,30 @@
-# Current Feature
+# Current Feature: Database Seed Script
 
-<!-- Feature name and short description -->
+Create a Prisma seed script (`prisma/seed.ts`) that populates the dev database with the admin/regular user accounts and the mock items + rental history used by the dashboard today.
 
 ## Status
 
-<!-- Not Started | In Progress | Completed -->
+In Progress
 
 ## Goals
 
-<!-- Goals and requirements -->
+- Add a `prisma/seed.ts` script wired into Prisma 7's seed configuration so it can be run via `prisma db seed`
+- Hash passwords with `bcryptjs` (12 rounds) — install the dependency
+- Seed an **admin** user: `admin@booksy.com` / "Alex Admin" / password `admin123` / role `ADMIN` / `emailVerified` = now
+- Seed a **regular** user: `j.doe@booksy.com` / "John Doe" / password `user123` / role `USER` / `emailVerified` = now
+- Seed all items from `@src/lib/mock-data.ts` into the `Item` table
+- Seed the rental history entries from `@src/lib/mock-data.ts` into the `RentalHistory` table, remapping the mock userIds to the real created user IDs
+- Make the script idempotent (use upserts on stable keys like email) so re-running doesn't duplicate rows
 
 ## Notes
 
-<!-- Any extra notes -->
+- Prisma 7 changed seeding: it no longer runs automatically with `migrate`. The seed entry point must be declared in `prisma.config.ts` (or `package.json`'s `prisma.seed`) and invoked via `npx prisma db seed`.
+- `mock-data.ts` references a third user `a.smith@booksy.com` on item 10 + rental history (`user_asmith`). The spec only defines two users (admin + j.doe). Decision needed at `start` time: (a) add Alice Smith as a third seed user, (b) reassign item 10 / Alice's history to j.doe, or (c) drop those entries. **Default plan: add Alice Smith** so the existing dashboard data renders unchanged — confirm at start.
+- Mock `rentalHistory` uses string userIds (`user_jdoe`, `user_asmith`) that don't match Prisma `cuid()` IDs. Map them to real user IDs after the user upserts.
+- Item 10's `assignedTo` is `a.smith@booksy.com`, requiring that user to exist before the item insert — order matters: users → items → rental history.
+- Plain-text passwords (`admin123`, `user123`) are dev-only fixture credentials. Do not document them in committed README until later phases consciously do so.
+- Run order: ensure migrations are applied (`prisma migrate dev` or `deploy`) before seeding so the tables exist.
+- Out of scope here: the data-quality fixes mentioned in `project-overview.md` (duplicate IDs, future dates, brand typos) — those came from a different draft list and are not in `mock-data.ts`.
 
 ## History
 
