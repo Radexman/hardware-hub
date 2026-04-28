@@ -1,6 +1,9 @@
 import { HardwareList } from "@/components/dashboard/hardware-list";
-import { items } from "@/lib/mock-data";
+import { getItems } from "@/lib/db/items";
 
-export default function DashboardPage() {
+export const dynamic = "force-dynamic";
+
+export default async function DashboardPage() {
+  const items = await getItems();
   return <HardwareList items={items} />;
 }
