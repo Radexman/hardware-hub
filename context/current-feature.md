@@ -1,18 +1,30 @@
-# Current Feature
+# Current Feature: Prisma + Neon Postgres Setup
 
-<!-- Feature name and short description -->
+Set up Prisma ORM against a serverless Neon Postgres database with the initial schema and a clean migration workflow.
 
 ## Status
 
-<!-- Not Started | In Progress | Completed -->
+In Progress
 
 ## Goals
 
-<!-- Goals and requirements -->
+- Wire up Neon Postgres (serverless) as the database, with `DATABASE_URL` pointing at the development branch
+- Install and configure Prisma 7 (account for breaking changes vs. older versions)
+- Create the initial schema from the data models in `@context/project-overview.md` (User, Item, RentalHistory + enums Role, ItemStatus, RentalAction)
+- Add NextAuth v5 models alongside the app schema (Account, Session, VerificationToken)
+- Add the indexes and cascade deletes called for in the draft schema and standards
+- Generate the initial migration via `prisma migrate dev` (do not use `prisma db push`)
+- Wire a Prisma client singleton suitable for Next.js (avoid hot-reload connection storms)
 
 ## Notes
 
-<!-- Any extra notes -->
+- The schema in `@context/project-overview.md` is a rough draft and will evolve — favor the structure there but don't over-fit; expect iteration in later phases (auth, rentals, admin).
+- Two database branches: the dev branch is what `DATABASE_URL` resolves to during development; production is a separate branch. **Always** create migrations and never push directly unless explicitly told.
+- Coding standards reminder (`@context/coding-standards.md`): use `prisma migrate dev` for schema changes, `prisma migrate status` before committing, `prisma migrate deploy` in production.
+- Prisma 7 has breaking changes — review the upgrade guide before installing/configuring: https://www.prisma.io/docs/orm/more/upgrade-guides/upgrading-versions/upgrading-to-prisma-7
+- Quickstart reference: https://www.prisma.io/docs/getting-started/prisma-orm/quickstart/prisma-postgres
+- Seed data and the data-quality fixes documented in `project-overview.md` (duplicate ID, future dates, brand typos, etc.) are out of scope here unless explicitly requested — this phase is schema + connection only.
+- Secrets (Neon connection string) belong in `.env`/`.env.local`, never committed.
 
 ## History
 
