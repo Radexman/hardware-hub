@@ -82,7 +82,11 @@ Demo credentials exist only for reviewer access.
 
 # AI-Assisted Development Workflow
 
-Development was organized around a spec-driven Claude Code workflow rather than ad hoc prompting.
+Development followed a custom spec-driven Claude Code workflow combining planning, implementation, testing, review, and structured documentation in an iterative loop.
+
+Rather than using AI through ad hoc prompting, features were developed through reusable commands, persistent project context, and documented feature phases.
+
+<img width="2421" height="3748" alt="AI Workflow" src="https://github.com/user-attachments/assets/a40c34e3-f5ef-4972-b650-8b7e5007f546" />
 
 ## Feature Workflow
 
@@ -92,10 +96,10 @@ Custom Claude skills in:
 .claude/skills/feature/
 ```
 
-drive a feature lifecycle:
+drive a structured feature lifecycle:
 
 ```text
-load → implement → complete
+document → implement → test → review → complete
 ```
 
 Primary commands:
@@ -103,20 +107,40 @@ Primary commands:
 ```bash
 feature load
 feature start
+feature test
+feature review
 feature complete
 ```
 
-Each feature is first scoped in markdown spec files under:
+Typical flow:
+
+1. A feature is first scoped as a markdown spec in:
 
 ```text
 context/features/
 ```
 
-then loaded into active AI context before implementation.
+2. `feature load` loads the spec and supporting project context into active working context.
+
+3. `feature start` implements the feature against that spec.
+
+4. `feature test` validates behavior through manual QA, TDD, or iterative fixes.
+
+5. `feature review` performs a refinement / review pass before commit.
+
+6. `feature complete` updates documentation and closes the feature lifecycle.
+
+Implementation history and AI collaboration decisions are tracked in:
+
+```text
+context/current-feature.md
+```
+
+which acts as both the active development log and chronological feature ledger.
 
 ## Context Architecture
 
-Structured context used for AI collaboration:
+Structured context used throughout AI collaboration:
 
 ```text
 context/
@@ -127,21 +151,24 @@ context/
   screenshots/
 ```
 
-Key artifacts:
+### Key Artifacts
 
-- `project-overview.md`  
-  Architecture and domain context.
+**`project-overview.md`**  
+Product architecture, domain rules, and technical constraints.
 
-- `current-feature.md`  
-  Active feature memory + chronological implementation history.
+**`current-feature.md`**  
+Active feature context plus chronological implementation history (used as the primary AI collaboration log).
 
-- `features/`  
-  Phased specs used as structured implementation prompts.
+**`features/`**  
+Phased feature specs used as structured implementation prompts.
 
-- `screenshots/`  
-  Visual references used for UI generation.
+**`screenshots/`**  
+Visual UI references used to guide implementation.
 
-Rather than treating prompt history as chat logs, the collaboration trail is captured in specs + `current-feature.md`.
+**`.claude/skills/feature/`**  
+Custom Claude skill commands supporting the documented workflow above.
+
+Rather than relying on raw prompt history as documentation, the collaboration trail is captured through specs, command workflows, and `current-feature.md`.
 
 ---
 
