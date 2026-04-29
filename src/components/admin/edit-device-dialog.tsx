@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { toast } from "sonner";
 
-import { createItemAction } from "@/actions/items";
+import { updateItemAction } from "@/actions/items";
 import {
   DeviceForm,
   type DeviceFormSubmitResult,
@@ -19,18 +19,29 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import type { Item } from "@/lib/mock-data";
 
-const DEFAULT_VALUES: DeviceFormValues = {
-  name: "",
-  brand: "",
-  purchaseDate: "",
-  status: "AVAILABLE",
-  notes: "",
-};
+function defaultsFromItem(item: Item): DeviceFormValues {
+  return {
+    name: item.name,
+    brand: item.brand,
+    purchaseDate: item.purchaseDate ?? "",
+    status: item.status === "REPAIR" ? "REPAIR" : "AVAILABLE",
+    notes: item.notes ?? "",
+  };
+}
 
-export function AddDeviceDialog({ brandOptions }: { brandOptions: string[] }) {
+export function EditDeviceDialog({
+  item,
+  brandOptions,
+}: {
+  item: Item;
+  brandOptions: string[];
+}) {
   const [open, setOpen] = useState(false);
   const [formKey, setFormKey] = useState(0);
+
+  const lockStatus = item.status === "IN_USE";
 
   function handleOpenChange(next: boolean) {
     setOpen(next);
@@ -40,19 +51,20 @@ export function AddDeviceDialog({ brandOptions }: { brandOptions: string[] }) {
   async function handleSubmit(
     values: DeviceFormValues,
   ): Promise<DeviceFormSubmitResult> {
-    const res = await createItemAction({
+    const res = await updateItemAction({
+      itemId: item.id,
       name: values.name,
       brand: values.brand,
       purchaseDate: values.purchaseDate,
-      status: values.status,
       notes: values.notes,
+      status: lockStatus ? undefined : values.status,
     });
     if (res.success) {
-      toast.success(`${values.name} added to inventory`);
+      toast.success(`${values.name} updated`);
       handleOpenChange(false);
       return { success: true };
     }
-    toast.error("Could not create device", { description: res.error });
+    toast.error("Could not save changes", { description: res.error });
     return { success: false, error: res.error };
   }
 
@@ -62,27 +74,27 @@ export function AddDeviceDialog({ brandOptions }: { brandOptions: string[] }) {
         render={
           <Button
             type="button"
+            variant="outline"
             size="sm"
-            className="bg-brand text-brand-foreground hover:bg-brand/90"
+            aria-label={`Edit ${item.name}`}
+            title="Edit"
           >
-            <Plus />
-            Add Device
+            <Pencil />
           </Button>
         }
       />
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add device</DialogTitle>
-          <DialogDescription>
-            Register a new piece of hardware.
-          </DialogDescription>
+          <DialogTitle>Edit {item.name}</DialogTitle>
+          <DialogDescription>{item.brand}</DialogDescription>
         </DialogHeader>
 
         <DeviceForm
           key={formKey}
-          mode="create"
-          defaultValues={DEFAULT_VALUES}
+          mode="edit"
+          defaultValues={defaultsFromItem(item)}
           brandOptions={brandOptions}
+          lockStatus={lockStatus}
           onSubmit={handleSubmit}
           onCancel={() => handleOpenChange(false)}
         />

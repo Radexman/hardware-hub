@@ -143,7 +143,9 @@ export function AdminInventory({
               key={item.id}
               item={item}
               view="grid"
-              action={<AdminItemActions />}
+              action={
+                <AdminItemActions item={item} brandOptions={brandOptions} />
+              }
             />
           ))}
         </div>
@@ -154,7 +156,9 @@ export function AdminInventory({
               key={item.id}
               item={item}
               view="list"
-              action={<AdminItemActions />}
+              action={
+                <AdminItemActions item={item} brandOptions={brandOptions} />
+              }
             />
           ))}
         </div>
