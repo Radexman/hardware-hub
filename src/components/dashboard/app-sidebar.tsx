@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { LogOut, Monitor, Package, Shield, Wrench } from "lucide-react";
 
-import { currentUser } from "@/lib/mock-data";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,9 +26,9 @@ const NAV_ITEMS = [
   { label: "Admin Panel", href: "/admin", icon: Shield },
 ] as const;
 
-function getInitials(name: string) {
-  return name
-    .split(" ")
+function getInitials(value: string) {
+  return value
+    .split(/[\s@.]+/)
     .map((part) => part[0])
     .filter(Boolean)
     .slice(0, 2)
@@ -36,8 +36,17 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
-export function AppSidebar() {
+type AppSidebarUser = {
+  name: string | null;
+  email: string;
+  role: "USER" | "ADMIN";
+  image?: string | null;
+};
+
+export function AppSidebar({ user }: { user: AppSidebarUser }) {
   const pathname = usePathname();
+  const displayName = user.name?.trim() || user.email;
+  const initials = getInitials(displayName);
 
   return (
     <Sidebar collapsible="icon">
@@ -84,19 +93,19 @@ export function AppSidebar() {
       <SidebarFooter>
         <div className="flex items-center gap-3 rounded-md p-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0">
           <Avatar className="size-9 shrink-0">
-            {currentUser.image ? (
-              <AvatarImage src={currentUser.image} alt={currentUser.name} />
+            {user.image ? (
+              <AvatarImage src={user.image} alt={displayName} />
             ) : null}
             <AvatarFallback className="bg-brand text-brand-foreground text-xs font-medium">
-              {getInitials(currentUser.name)}
+              {initials}
             </AvatarFallback>
           </Avatar>
           <div className="flex min-w-0 flex-1 flex-col group-data-[collapsible=icon]:hidden">
             <span className="truncate text-sm font-medium">
-              {currentUser.name}
+              {displayName}
             </span>
             <span className="text-muted-foreground truncate text-xs uppercase">
-              {currentUser.role}
+              {user.role}
             </span>
           </div>
           <Button
@@ -104,6 +113,7 @@ export function AppSidebar() {
             size="icon"
             aria-label="Logout"
             className="group-data-[collapsible=icon]:hidden"
+            onClick={() => signOut({ redirectTo: "/login" })}
           >
             <LogOut />
           </Button>

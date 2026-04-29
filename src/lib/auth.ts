@@ -1,5 +1,10 @@
-// Placeholder until NextAuth is wired up. Returns the email of the
-// currently signed-in user. Hard-coded to a seeded user for now.
-export function getCurrentUserEmail(): string {
-  return "j.doe@booksy.com";
+import { auth } from "@/auth";
+
+export async function getCurrentUserEmail(): Promise<string> {
+  const session = await auth();
+  const email = session?.user?.email;
+  if (!email) {
+    throw new Error("getCurrentUserEmail called without an authenticated session");
+  }
+  return email;
 }
