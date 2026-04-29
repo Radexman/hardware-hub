@@ -4,6 +4,7 @@ import { AdminInventory } from "@/components/admin/admin-inventory";
 import { InventorySkeleton } from "@/components/admin/inventory-skeleton";
 import { UsersList } from "@/components/admin/users-list";
 import { UsersSkeleton } from "@/components/admin/users-skeleton";
+import { requireAdmin } from "@/lib/auth";
 import { getItems } from "@/lib/db/items";
 import { getUsers } from "@/lib/db/users";
 
@@ -20,7 +21,9 @@ async function UsersLoader() {
   return <UsersList users={users} />;
 }
 
-export default function AdminPage() {
+export default async function AdminPage() {
+  await requireAdmin();
+
   return (
     <div className="flex flex-col gap-12">
       <Suspense fallback={<InventorySkeleton />}>

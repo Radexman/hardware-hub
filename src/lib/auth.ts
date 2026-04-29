@@ -1,10 +1,29 @@
+import { redirect } from "next/navigation";
+import type { Session } from "next-auth";
+
 import { auth } from "@/auth";
 
-export async function getCurrentUserEmail(): Promise<string> {
+export async function getSession(): Promise<Session | null> {
+  return auth();
+}
+
+export async function requireSession(): Promise<Session> {
   const session = await auth();
-  const email = session?.user?.email;
-  if (!email) {
-    throw new Error("getCurrentUserEmail called without an authenticated session");
+  if (!session?.user?.email) {
+    redirect("/login");
   }
-  return email;
+  return session;
+}
+
+export async function requireAdmin(): Promise<Session> {
+  const session = await requireSession();
+  if (session.user.role !== "ADMIN") {
+    redirect("/hardware");
+  }
+  return session;
+}
+
+export async function getCurrentUserEmail(): Promise<string> {
+  const session = await requireSession();
+  return session.user.email!;
 }
