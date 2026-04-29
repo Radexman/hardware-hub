@@ -1,16 +1,30 @@
-# Current Feature
+# Current Feature: Rental Workflow — Phase 1
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Add bullet points of what success looks like -->
+- Wire the existing Rent button (hardware list) and Return button (My Rentals) to real server actions backed by Prisma.
+- Implement Rent: `AVAILABLE` → `IN_USE`, set `assignedTo` to current user, set `returnDate` to a default (+14 days), and write a `RENT` `RentalHistory` row atomically.
+- Implement Return: `IN_USE` → `AVAILABLE`, clear `assignedTo` and `returnDate`, and write a `RETURN` `RentalHistory` row atomically.
+- Enforce server-side guards: cannot rent items in `REPAIR` or already `IN_USE`; cannot return items not in `IN_USE` or not assigned to the current user.
+- Revalidate `/hardware` and `/my-rentals` after successful mutations so both views reflect new state.
+- Centralize rental business logic so guards aren't duplicated between rent and return paths.
+- Cover the critical paths with unit tests (rent/return guards, state transitions, history writes, post-mutation My Rentals state).
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- Spec: [rental-workflow-phase-1-spec.md](context/features/rental-workflow-phase-1-spec.md).
+- Use Next.js App Router server actions (`'use server'`) per coding standards; validate inputs with Zod; return the `{ success, data?, error? }` shape.
+- Wrap each mutation in a Prisma transaction so the item update and the `RentalHistory` insert succeed/fail together; this also defends against double-rent races by checking status inside the transaction (or via `updateMany` with a status filter).
+- Default rental period is hard-coded to +14 days for this phase — a custom deadline picker comes later.
+- Existing models in `prisma/schema.prisma` are sufficient (Item, RentalHistory, User) — no migrations required.
+- Auth is already in place from the Auth phases: pull the current user via `requireSession()` / `getCurrentUserEmail()` from `src/lib/auth.ts`. Do not trust client-supplied user identity.
+- Existing UI hooks: `RentButton` / `ReturnButton` live in `src/components/items/actions.tsx` (currently decorative). Pass the item id through and convert these to client components that call the server action with a pending state.
+- Toast feedback can be a light touch (success/error) but is not required by this phase — keep it small if added.
+- Use Context7 to confirm the latest Next.js 16 server-action conventions (e.g., `revalidatePath` usage, `useActionState`, error surfacing) before wiring up.
 
 ## History
 

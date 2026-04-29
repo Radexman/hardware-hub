@@ -133,7 +133,11 @@ export function HardwareList({ items }: { items: Item[] }) {
               key={item.id}
               item={item}
               view="grid"
-              action={item.status === "AVAILABLE" ? <RentButton /> : undefined}
+              action={
+                item.status === "AVAILABLE" ? (
+                  <RentButton itemId={item.id} />
+                ) : undefined
+              }
             />
           ))}
         </div>
@@ -144,7 +148,11 @@ export function HardwareList({ items }: { items: Item[] }) {
               key={item.id}
               item={item}
               view="list"
-              action={item.status === "AVAILABLE" ? <RentButton /> : undefined}
+              action={
+                item.status === "AVAILABLE" ? (
+                  <RentButton itemId={item.id} />
+                ) : undefined
+              }
             />
           ))}
         </div>
