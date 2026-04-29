@@ -1,18 +1,16 @@
 # Current Feature
 
-<!-- Feature name and short description -->
-
 ## Status
 
-<!-- Not Started | In Progress | Completed -->
+Not Started
 
 ## Goals
 
-<!-- Goals and requirements -->
+<!-- Add bullet points of what success looks like -->
 
 ## Notes
 
-<!-- Any extra notes -->
+<!-- Additional context, constraints, or details from spec -->
 
 ## History
 
@@ -31,3 +29,4 @@
 - 2026-04-28 — Prod DB Seed + README: installed `dotenv-cli`; added `db:migrate:deploy:prod`, `db:seed:prod`, `db:test:prod` npm scripts that pipe `.env.production` through dotenv-cli so the prod target is always explicit; applied the existing migration and ran the existing seed against the prod Neon branch (3 users, 11 items, 5 rental history entries — verified via `db:test:prod`); replaced the create-next-app default README with a project README led by a Demo Accounts table (admin/j.doe/a.smith with seeded passwords), followed by quick-start, scripts reference, tech stack, and TODO sections for the fuller README content (status, trade-offs, AI dev log, screenshots).
 - 2026-04-28 — Admin Panel Phase 1 + Card Extraction: extracted the dashboard `ItemCard` to a shared `src/components/items/item-card.tsx` with an `action?: ReactNode` slot, optional `due`, and a `showAssignee` toggle; migrated `HardwareList` (passes `<RentButton />` only when AVAILABLE) and `MyRentalsList` (passes `<ReturnButton />` always + `due` + hides assignee) to the shared card and deleted both duplicate copies; added shared `RentButton`/`ReturnButton` in `src/components/items/actions.tsx`. Installed shadcn `dialog`/`select`/`textarea`/`label` primitives plus `react-hook-form`, `zod`, `@hookform/resolvers` (the shadcn `form` component isn't shipped with the `base-nova` style, so the Add Device dialog wires RHF + zod directly). New `/admin` route inside the `(app)` group: server component wraps `<Suspense fallback={<InventorySkeleton />}>` around an `AdminInventoryLoader` that calls `getItems()`, derives distinct brand options, and renders `AdminInventory` (search + Name/Brand/Date/Status sort + grid/list view toggle, mirroring `HardwareList`). Each card shows a disabled `AdminItemActions` cluster (Edit / Wrench / Delete) and a cyan "Add Device" button in the header opens `AddDeviceDialog` whose zod-validated submit currently `console.log`s the payload and resets the form.
 - 2026-04-28 — Admin Panel Phase 2 + ViewToggle Extraction: extracted the duplicated grid/list `ButtonGroup` into a shared `src/components/items/view-toggle.tsx` and migrated `HardwareList`, `MyRentalsList`, and `AdminInventory` to use it. Added `src/lib/db/users.ts` `getUsers()` returning a UI-safe `UserListItem` shape (id, name, email, role, createdAt — no password). Built `UserCard` with grid + Google-Drive-style list variants (avatar/initials, name, email, role badge, joined date, action slot), `AdminUserActions` disabled Edit/Delete cluster, `UsersSkeleton`, and `CreateUserDialog` (shadcn Dialog + RHF + zod for Name/Email/Password/Role; submit logs payload + resets). New `UsersList` client component renders the toolbar (count + view toggle + Create User cyan button) and the grid/list. `/admin/page.tsx` now sequentially renders two Suspense-bounded sections: inventory then users.
+- 2026-04-29 — Auth Phase 1 (NextAuth v5 Credentials Foundation): installed `next-auth@beta` + `@auth/prisma-adapter`; added split config — edge-safe `src/auth.config.ts` (with `pages.signIn: '/login'` and an `authorized` callback that gates `/hardware`, `/my-rentals`, `/admin` and redirects authed users at `/` or `/login` to `/hardware`) and full `src/auth.ts` attaching `PrismaAdapter`, JWT session strategy, a Credentials `authorize` that validates via `prisma.user.findUnique` + `bcrypt.compare`, and `jwt`/`session` callbacks copying `id`/`role` onto the session. Added `src/app/api/auth/[...nextauth]/route.ts`, `src/proxy.ts` (Next.js 16's renamed middleware) wrapping `auth` with a matcher that skips `/api/auth`, Next internals, and static assets, and `src/types/next-auth.d.ts` augmenting `Session.user` and `User` with `id`/`role`. Replaced the placeholder `getCurrentUserEmail()` to read from the live session (throws if no session). Added a minimal client-side `/login` page (email/password → `signIn('credentials')` → `/hardware`) as the redirect target for `pages.signIn`; full Phase 2 styling lands later. Converted `(app)/layout.tsx` to an async server component that awaits `auth()`, redirects to `/login` if no session, and passes session-derived user info to `AppSidebar`; the sidebar now renders the real name/role and the logout button calls `signOut({ redirectTo: '/login' })`. Documented `AUTH_SECRET`/`AUTH_URL` in `.env.example`.
