@@ -3,148 +3,102 @@
 AI-assisted internal hardware rental and inventory management platform built for the Booksy recruitment assignment.
 
 Hardware Hub manages:
-- Company equipment inventory
-- Employee rental workflows
+- Equipment inventory and rentals
 - Repair lifecycle tracking
 - Role-based admin management
-- AI-assisted hardware discovery (MVP semantic search planned)
+- Admin user onboarding
+- AI-assisted development workflows
 
-> This repository is submitted as a recruitment task and intentionally includes demo fixtures, seeded users, structured AI collaboration artifacts, and phased implementation documentation for review.
+> This repository intentionally includes seeded demo data, structured AI collaboration artifacts, phased specs, and implementation history for review.
 
 ---
 
 # Overview
 
-Hardware Hub is designed as an internal equipment management platform where employees can browse and rent devices while administrators manage inventory, repairs, and user onboarding.
+Hardware Hub is designed as an internal tool where employees browse and rent equipment while administrators manage inventory, repairs, and user access.
 
 The project emphasizes:
 
 - AI-native product thinking
-- Spec-driven development
+- Spec-driven delivery
 - Role-based system design
-- Incremental delivery through documented feature phases
 - Human + AI collaborative engineering workflow
 
-Core MVP includes:
+## Core MVP Features
 
-## Employee Flows
-- Browse hardware inventory
-- Search, sort and filter devices
-- Rent available equipment
-- Return assigned equipment
-- View active rentals and due dates
+### Inventory & Rentals
+- Hardware catalog with grid + list views
+- Search, sorting and status filters
+- Rent / return workflows
+- Rental deadlines and due-state indicators
+- Repair state lifecycle
 
-## Admin Flows
-- Admin inventory management
-- Create and edit devices
-- Repair state toggling
-- Admin user onboarding
-- Protected admin controls
+### Admin
+- Device management (create/edit/repair)
+- Admin inventory controls
+- User onboarding (admin only)
+- Protected admin routes
 
-## Platform
+### Platform
 - Credentials authentication
-- Role-based route protection
+- Role-based access control
 - Server actions + optimistic mutations
-- Database-backed inventory and rental history
+- Prisma + Neon backed persistence
 
 ---
 
 # Demo Accounts
 
-The seeded database includes three review accounts:
+| Role | Email | Password |
+|---|---|---|
+| Admin | admin@booksy.com | admin123 |
+| User | j.doe@booksy.com | user123 |
+| User | a.smith@booksy.com | user123 |
 
-| Role  | Email                | Password   | Notes |
-|------|----------------------|------------|------|
-| Admin | `admin@booksy.com` | `admin123` | Full admin access |
-| User | `j.doe@booksy.com` | `user123` | Active rental seeded |
-| User | `a.smith@booksy.com` | `user123` | Active rental seeded |
-
-> Demo credentials exist solely for assignment review and are not intended for production use.
+Demo credentials exist only for reviewer access.
 
 ---
 
 # Tech Stack
 
-### Frontend
-- Next.js 16 (App Router + Turbopack)
-- React 19
-- TypeScript
-- Tailwind CSS v4
+**Frontend**
+- Next.js 16 / React 19 / TypeScript
+- Tailwind v4
 - shadcn/ui
-- Lucide Icons
 
-### Backend
+**Backend**
 - Prisma 7
 - Neon Postgres
-- Auth.js v5 (NextAuth)
+- Auth.js v5
 - Server Actions
 - bcryptjs
 
-### Tooling
-- ESLint v9
-- Vitest (planned)
-- Playwright (planned critical-path coverage)
-
----
-
-# Implemented Features
-
-## Inventory Management
-- Hardware catalog from Prisma-backed DB
-- Grid and Google-Drive-style list views
-- Search + sort controls
-- Status-aware device cards
-- Repair lifecycle states
-
-## Rental Workflow
-- Rent flow with confirmation dialog
-- Return flow with confirmation dialog
-- 7 / 14 / 30 day rental presets
-- Due-date classification
-- Optimistic updates
-- Rental history writes via transactions
-
-## Admin Panel
-- Inventory administration
-- Create / edit devices
-- Repair toggle actions
-- Admin user onboarding UI
-- Admin-only protected routes
-
-## Authentication & Access Control
-- Credentials login
-- Session-based protected routes
-- Role-based admin authorization
-- Session-scoped rentals
-
-## UX
-- Responsive dashboard
-- shadcn dialog-driven workflows
-- Sonner feedback toasts
-- Skeleton loading states
-- Shared reusable card architecture
-
----
-
-# Architecture Notes / Key Decisions
-
-Selected tradeoffs made intentionally for MVP scope:
-
-- Prioritized repair lifecycle over destructive inventory delete flows
-- Scoped user management to onboarding only (edit/deactivation deferred)
-- Used server actions rather than separate REST endpoints for mutations
-- Chose phased feature delivery over broad one-shot implementation
-- Simplified complex CRUD edge cases to prioritize AI feature + testing coverage
+**Tooling**
+- ESLint
+- Playwright (critical path tests)
+- Vitest (planned unit coverage)
 
 ---
 
 # AI-Assisted Development Workflow
 
-Development was organized around a structured spec-driven collaboration model with Claude Code.
+Development was organized around a spec-driven Claude Code workflow rather than ad hoc prompting.
 
-## Feature Lifecycle
+## Feature Workflow
 
-Work was driven through a custom feature command workflow:
+Custom Claude skills in:
+
+```text
+.claude/skills/feature/
+```
+
+drive a feature lifecycle:
+
+```text
+load → implement → complete
+```
+
+Primary commands:
 
 ```bash
 feature load
@@ -152,132 +106,107 @@ feature start
 feature complete
 ```
 
-Feature lifecycle:
+Each feature is first scoped in markdown spec files under:
 
 ```text
-load → analyze → implement → complete
+context/features/
 ```
 
-## AI Context System
+then loaded into active AI context before implementation.
 
-AI collaboration was structured through a dedicated `/context` architecture:
+## Context Architecture
+
+Structured context used for AI collaboration:
 
 ```text
 context/
   project-overview.md
   coding-standards.md
   current-feature.md
-  features/*.md
-  screenshots/*
+  features/
+  screenshots/
 ```
 
-### Context Roles
+Key artifacts:
 
-## `project-overview.md`
-Persistent architectural context:
-- Tech stack
-- Schema/domain model
-- project constraints
-- coding patterns
+- `project-overview.md`  
+  Architecture and domain context.
 
-## `coding-standards.md`
-Shared implementation standards used during feature generation.
+- `current-feature.md`  
+  Active feature memory + chronological implementation history.
 
-## `current-feature.md`
-Primary working memory file and living development log.
+- `features/`  
+  Phased specs used as structured implementation prompts.
 
-Tracks:
-- Active feature scope
-- implementation goals
-- notes / gotchas
-- chronological feature history
-- AI-assisted incremental "commit-style" progress log
+- `screenshots/`  
+  Visual references used for UI generation.
 
-This acts as the prompt-history artifact rather than relying on raw chat transcripts.
-
-## `features/*.md`
-Spec files used as structured implementation prompts.
-
-Examples:
-- auth phases
-- rental workflow phases
-- admin CRUD phases
-- semantic search planning
-- testing phases
-
-Each feature was scoped before implementation and loaded into active context.
-
-## `screenshots/`
-UI reference assets used by AI to align generated interfaces with intended designs.
+Rather than treating prompt history as chat logs, the collaboration trail is captured in specs + `current-feature.md`.
 
 ---
 
-## Claude Skills / Commands
+# MCP Tooling Used
 
-Custom Claude skills in `.claude/` orchestrate feature delivery.
+The project also uses MCP tooling as part of the AI workflow:
 
-Examples:
+## Neon MCP
+Used for:
+- Direct DB inspection
+- Seed verification
+- Query debugging
+- Schema validation during Prisma work
 
-### `feature load`
-Loads a feature spec into active context and updates `current-feature.md`.
+## Playwright MCP
+Used for:
+- Browser workflow validation
+- E2E testing support
+- Critical user-flow verification
 
-### `feature start`
-Begins implementation against the loaded feature.
+## Context7
+Used to keep AI grounded in current library conventions and updates, especially for:
+- Next.js 16
+- Auth.js v5
+- Prisma 7
+- shadcn/ui
 
-### `feature complete`
-Updates feature history and closes the phase.
+This was particularly useful when verifying evolving framework conventions.
 
-This created an iterative:
+---
+
+# Selected Engineering Tradeoffs
+
+Intentional MVP decisions:
+
+- Prioritized repair lifecycle over destructive inventory delete flows
+- Reduced user CRUD scope to onboarding-only for MVP
+- Used server actions instead of separate API layer for mutations
+- Simplified complex CRUD edge cases to prioritize AI feature + testing coverage
+
+These decisions were made intentionally under assignment time constraints.
+
+---
+
+# Repository / AI Log
+
+Incremental commits reflect feature-by-feature AI collaboration rather than one bulk implementation.
+
+Reviewers can inspect deeper artifacts here:
 
 ```text
-spec → implement → document
+context/current-feature.md
+context/features/
+.claude/skills/feature/
 ```
 
-loop for development.
-
----
-
-# AI Decision Log (Selected Examples)
-
-AI collaboration contributed to:
-
-- Spec refinement and phased delivery planning
-- Auth.js split config architecture
-- Prisma mutation patterns
-- UI generation using screenshot-driven context
-- CRUD scope reduction to protect MVP delivery
-- Rental workflow guard modeling
-- Repair-state business rule design
-
-Examples of AI-assisted product decisions:
-
-- Removed destructive delete flows from MVP scope
-- Prioritized repair lifecycle over full inventory deletion
-- Reduced user CRUD to onboarding-only for MVP
-- Chose lightweight semantic search MVP over over-engineered vector infrastructure
-- Used spec-driven feature sequencing rather than ad hoc prompting
-
-AI was used as a collaborative engineering tool, not code generation alone.
-
----
-
-# Repository / Commit Strategy
-
-Development followed incremental commits intended to show collaborative evolution rather than a single bulk "initial commit".
-
-Feature phases map closely to commit history and `current-feature.md` history entries.
+These contain:
+- feature specifications
+- implementation history
+- AI collaboration workflow
+- command/skill structure
 
 ---
 
 # Quick Start
-
-Prerequisites:
-- Node 20.19+
-- Neon Postgres database
-- `.env` with `DATABASE_URL`
-- Auth environment variables
-
-Install:
 
 ```bash
 npm install
@@ -287,30 +216,7 @@ npx prisma db seed
 npm run dev
 ```
 
-App:
-```bash
-http://localhost:3000
-```
-
----
-
-# Useful Scripts
-
-| Script | Description |
-|---|---|
-| npm run dev | Start Next dev server |
-| npm run build | Production build |
-| npm run lint | Run ESLint |
-| npx prisma migrate dev | Apply migrations |
-| npx prisma db seed | Seed demo data |
-| npx tsx scripts/test-db.ts | Inspect seeded DB data |
-| npm run db:migrate:deploy:prod | Apply prod migrations |
-| npm run db:seed:prod | Seed prod branch |
-| npm run db:test:prod | Verify prod seed |
-
----
-
-# Environment Variables
+Required environment variables:
 
 ```env
 DATABASE_URL=
@@ -320,76 +226,46 @@ AUTH_URL=
 
 ---
 
-# Testing (Planned / In Progress)
+# Useful Scripts
 
-Critical-path Playwright coverage planned for:
+| Script | Description |
+|---|---|
+| npm run dev | Start dev server |
+| npm run build | Production build |
+| npm run lint | Run linting |
+| npx prisma migrate dev | Apply migrations |
+| npx prisma db seed | Seed demo data |
+| npm run db:test:prod | Verify production seed |
 
-- Rent available item
-- Prevent renting repair item
-- Admin route protection
+---
 
-Additional DAL unit coverage planned via Vitest.
+# Testing
+
+Critical-path coverage focuses on:
+- Rental workflow protections
+- Repair-state constraints
+- Admin authorization guards
+
+Additional DAL unit coverage is planned via Vitest.
+
+---
+
+# Reviewer Guide
+
+For deeper review, start with:
+
+```text
+context/project-overview.md
+context/current-feature.md
+context/features/
+.claude/skills/feature/
+```
+
+These capture most architecture, implementation, and AI-collaboration decisions behind the repository.
 
 ---
 
 # Deployment
 
-Deployment target:
-- Vercel (preferred)
-- Neon Postgres
-
-Live demo link:
-`[add deployment url here]`
-
----
-
-# Screenshots
-
-UI references and implementation targets live in:
-
-```text
-context/screenshots/
-```
-
-Includes:
-- login
-- hardware list
-- my rentals
-- admin panel
-- create item flow
-
-(Production screenshots to be added in final submission.)
-
----
-
-# Project Status
-
-Current progress (approx.):
-
-```text
-~85% complete toward scoped MVP
-```
-
-Remaining:
-- Admin User Management persistence
-- AI Semantic Search MVP
-- Critical-path Playwright tests
-- Final polish / documentation
-
----
-
-# Notes For Reviewers
-
-This assignment intentionally emphasizes:
-
-- Product thinking under time constraints
-- AI-assisted engineering workflow
-- Structured specification-driven delivery
-- Tradeoff decisions and scope management
-- Clean incremental collaboration history
-
-Please see:
-- `context/current-feature.md`
-- `context/features/`
-- `.claude/`
-for the AI collaboration artifacts and phased development record.
+Live demo:
+`[add deployment url]`
