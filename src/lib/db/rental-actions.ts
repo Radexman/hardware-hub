@@ -1,8 +1,11 @@
 import "server-only";
 
 import { prisma } from "@/lib/prisma";
-
-export const DEFAULT_RENTAL_DAYS = 14;
+import {
+  DEFAULT_RENTAL_PERIOD_DAYS,
+  addDays,
+  type RentalPeriodDays,
+} from "@/lib/rental-status";
 
 export type RentalErrorCode =
   | "NOT_FOUND"
@@ -25,20 +28,16 @@ export const RENTAL_ERROR_MESSAGE: Record<RentalErrorCode, string> = {
   RACE: "Item state changed, please refresh and try again.",
 };
 
-function defaultReturnDate(now: Date = new Date()): Date {
-  const due = new Date(now);
-  due.setUTCDate(due.getUTCDate() + DEFAULT_RENTAL_DAYS);
-  return due;
-}
-
 export async function rentItem(input: {
   itemId: string;
   userId: string;
   userEmail: string;
+  rentalDays?: RentalPeriodDays;
   now?: Date;
 }): Promise<RentalResult> {
   const { itemId, userId, userEmail } = input;
-  const returnDate = defaultReturnDate(input.now);
+  const days = input.rentalDays ?? DEFAULT_RENTAL_PERIOD_DAYS;
+  const returnDate = addDays(input.now ?? new Date(), days);
 
   return prisma.$transaction(async (tx) => {
     const item = await tx.item.findUnique({ where: { id: itemId } });
