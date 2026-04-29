@@ -1,16 +1,32 @@
-# Current Feature
+# Current Feature: Rental Workflow — Phase 2
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Add bullet points of what success looks like -->
+- Rent confirmation modal: clicking Rent opens a shadcn `Dialog` with item summary, current status, deadline selector, Confirm Rent + Cancel.
+- Return confirmation modal: clicking Return opens a shadcn `Dialog` with item summary, confirmation prompt, Confirm Return + Cancel.
+- Deadline selector inside the rent modal with 7 / 14 / 30 day presets (default 14), and the chosen value flows through the server action to `Item.returnDate`.
+- Toast feedback via shadcn Sonner — success on rent/return, error on guard failures and other action errors.
+- Loading / disabled state on action buttons and modal Confirm buttons, with a spinner while pending and duplicate-submit prevention.
+- Due-date indicators in My Rentals: normal / due-soon / overdue badges, plus an optional pulse on overdue.
+- Optimistic UI for rent/return so the list reflects state immediately, with server truth still authoritative and graceful rollback on failure.
+- General item-card polish: hover affordances, clearer disabled states, consistent motion/transitions.
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- Spec: [rental-workflow-phase-2-spec.md](context/features/rental-workflow-phase-2-spec.md).
+- Reuse the Phase 1 DAL ([src/lib/db/rental-actions.ts](src/lib/db/rental-actions.ts)) — extend `rentItem` / `rentItemAction` to accept the chosen rental period, keep `DEFAULT_RENTAL_DAYS = 14` as the fallback when the caller omits it, and validate the deadline server-side as a zod enum of the allowed presets so a malicious client cannot ship an arbitrary `returnDate`.
+- Modal layer must not duplicate business logic — the existing guards (`IN_REPAIR`, `ALREADY_RENTED`, `NOT_IN_USE`, `NOT_ASSIGNED_TO_USER`, `RACE`) and atomic transaction stay in the DAL; the modal only carries the deadline preset and the user's confirmation.
+- Sonner is not yet installed — add the shadcn `sonner` primitive and mount the `<Toaster />` once in the root layout (or `(app)/layout.tsx`); wire success and error messages from the existing `RENTAL_ERROR_MESSAGE` map so error copy stays consistent.
+- Use Context7 to confirm the current shadcn Sonner install/usage and React 19 `useOptimistic` patterns inside an App Router server-action flow before wiring up.
+- Deadline UI: prefer a segmented `ButtonGroup` (already in the app) or shadcn `RadioGroup` over a date picker — keep it tight and aligned with the Linear/ops-dashboard aesthetic. No calendar yet.
+- Due-soon / overdue helpers should live in a small utility (e.g., `src/lib/rental-status.ts`) and be pure — easy to drop a Vitest test on later when the test harness lands. "Due soon" threshold suggestion: ≤ 3 days remaining; "Overdue" = `returnDate < startOfTodayUTC`.
+- Optimistic UX: use React 19 `useOptimistic` in `HardwareList` (remove the rented item / change status) and `MyRentalsList` (drop the returned item). On `{ success: false }` from the action, surface the toast and let revalidation reconcile. Avoid rolling state ourselves — `useOptimistic` resets when the underlying server-fetched prop refreshes.
+- Keep the inline `role="alert"` error from Phase 1 but downgrade priority — the Sonner toast becomes the primary surface for action feedback now that buttons are gated by modals.
+- Vitest is still not actually installed in `package.json` (see Phase 1 note). Tests for the new deadline-clamping, due-soon/overdue helpers, and updated DAL signature are deferred to the Vitest-scaffold follow-up — call this out again at the end of the phase.
 
 ## History
 

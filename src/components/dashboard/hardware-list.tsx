@@ -1,15 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useOptimistic, useState } from "react";
 import { Sparkles } from "lucide-react";
 
+import { rentItemAction, type ActionResult } from "@/actions/rentals";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
 import { ItemCard, type ItemCardView } from "@/components/items/item-card";
-import { RentButton } from "@/components/items/actions";
+import { RentDialog } from "@/components/items/rent-dialog";
 import { ViewToggle } from "@/components/items/view-toggle";
 import type { Item, ItemStatus } from "@/lib/mock-data";
+import type { RentalPeriodDays } from "@/lib/rental-status";
 import { cn } from "@/lib/utils";
 
 type SortKey = "name" | "brand" | "date" | "status";
@@ -63,13 +65,31 @@ export function HardwareList({ items }: { items: Item[] }) {
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [view, setView] = useState<ItemCardView>("grid");
 
+  const [optimisticItems, markRented] = useOptimistic<Item[], string>(
+    items,
+    (state, rentedId) =>
+      state.map((item) =>
+        item.id === rentedId
+          ? { ...item, status: "IN_USE" as const }
+          : item,
+      ),
+  );
+
+  async function handleRent(
+    itemId: string,
+    rentalDays: RentalPeriodDays,
+  ): Promise<ActionResult> {
+    markRented(itemId);
+    return rentItemAction({ itemId, rentalDays });
+  }
+
   const visible = useMemo(() => {
     const trimmed = query.trim().toLowerCase();
     const filtered = trimmed
-      ? items.filter((item) => matchesQuery(item, trimmed))
-      : items;
+      ? optimisticItems.filter((item) => matchesQuery(item, trimmed))
+      : optimisticItems;
     return [...filtered].sort((a, b) => compareItems(a, b, sortKey));
-  }, [items, query, sortKey]);
+  }, [optimisticItems, query, sortKey]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -135,7 +155,10 @@ export function HardwareList({ items }: { items: Item[] }) {
               view="grid"
               action={
                 item.status === "AVAILABLE" ? (
-                  <RentButton itemId={item.id} />
+                  <RentDialog
+                    item={item}
+                    onConfirm={(days) => handleRent(item.id, days)}
+                  />
                 ) : undefined
               }
             />
@@ -150,7 +173,10 @@ export function HardwareList({ items }: { items: Item[] }) {
               view="list"
               action={
                 item.status === "AVAILABLE" ? (
-                  <RentButton itemId={item.id} />
+                  <RentDialog
+                    item={item}
+                    onConfirm={(days) => handleRent(item.id, days)}
+                  />
                 ) : undefined
               }
             />

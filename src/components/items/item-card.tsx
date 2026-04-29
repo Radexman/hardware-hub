@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
-import { Calendar, Clock } from "lucide-react";
+import { AlertTriangle, Calendar, Clock } from "lucide-react";
 
 import type { Item, ItemStatus } from "@/lib/mock-data";
+import type { DueState } from "@/lib/rental-status";
 import { cn } from "@/lib/utils";
 
 export type ItemCardView = "grid" | "list";
@@ -51,11 +52,25 @@ function StatusBadge({ status }: { status: ItemStatus }) {
   );
 }
 
-function DueLine({ due }: { due: string }) {
+function DueLine({ due, state = "normal" }: { due: string; state?: DueState }) {
+  const Icon = state === "overdue" ? AlertTriangle : Clock;
+  const label =
+    state === "overdue"
+      ? "Overdue"
+      : state === "due-soon"
+        ? "Due soon"
+        : "Due";
   return (
-    <span className="text-foreground inline-flex items-center gap-1.5 text-xs font-medium">
-      <Clock className="size-3.5" />
-      Due {formatDate(due)}
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 text-xs font-medium",
+        state === "normal" && "text-foreground",
+        state === "due-soon" && "text-yellow-400",
+        state === "overdue" && "text-red-400 animate-pulse",
+      )}
+    >
+      <Icon className="size-3.5" />
+      {label} · {formatDate(due)}
     </span>
   );
 }
@@ -66,6 +81,7 @@ const CARD_BASE =
 type CommonProps = {
   item: Item;
   due?: string | null;
+  dueState?: DueState;
   showAssignee?: boolean;
   action?: ReactNode;
 };
@@ -73,6 +89,7 @@ type CommonProps = {
 function GridCard({
   item,
   due,
+  dueState,
   showAssignee = true,
   action,
 }: CommonProps) {
@@ -100,7 +117,7 @@ function GridCard({
         </span>
       </div>
 
-      {due ? <DueLine due={due} /> : null}
+      {due ? <DueLine due={due} state={dueState} /> : null}
 
       {(showAssignee && item.assignedTo) || item.notes ? (
         <div className="flex flex-col gap-2">
@@ -126,6 +143,7 @@ function GridCard({
 function ListCard({
   item,
   due,
+  dueState,
   showAssignee = true,
   action,
 }: CommonProps) {
@@ -158,7 +176,7 @@ function ListCard({
           {due ? (
             <>
               <span className="text-muted-foreground/40 text-xs">·</span>
-              <DueLine due={due} />
+              <DueLine due={due} state={dueState} />
             </>
           ) : null}
         </div>
@@ -180,6 +198,7 @@ export function ItemCard({
   item,
   view = "grid",
   due,
+  dueState,
   showAssignee,
   action,
 }: CommonProps & { view?: ItemCardView }) {
@@ -187,6 +206,7 @@ export function ItemCard({
     <ListCard
       item={item}
       due={due}
+      dueState={dueState}
       showAssignee={showAssignee}
       action={action}
     />
@@ -194,6 +214,7 @@ export function ItemCard({
     <GridCard
       item={item}
       due={due}
+      dueState={dueState}
       showAssignee={showAssignee}
       action={action}
     />
