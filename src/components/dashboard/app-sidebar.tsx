@@ -26,6 +26,9 @@ const NAV_ITEMS = [
 
 export function AppSidebar({ user }: { user: UserNavUser }) {
   const pathname = usePathname();
+  const navItems = NAV_ITEMS.filter(
+    (item) => item.href !== "/admin" || user.role === "ADMIN",
+  );
 
   return (
     <Sidebar collapsible="icon">
@@ -48,7 +51,7 @@ export function AppSidebar({ user }: { user: UserNavUser }) {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {NAV_ITEMS.map((item) => {
+              {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href;
                 return (
