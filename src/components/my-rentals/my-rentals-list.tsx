@@ -42,7 +42,7 @@ export function MyRentalsList({ items }: { items: Item[] }) {
               view="grid"
               due={item.returnDate}
               showAssignee={false}
-              action={<ReturnButton />}
+              action={<ReturnButton itemId={item.id} />}
             />
           ))}
         </div>
@@ -55,7 +55,7 @@ export function MyRentalsList({ items }: { items: Item[] }) {
               view="list"
               due={item.returnDate}
               showAssignee={false}
-              action={<ReturnButton />}
+              action={<ReturnButton itemId={item.id} />}
             />
           ))}
         </div>
