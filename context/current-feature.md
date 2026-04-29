@@ -1,16 +1,34 @@
-# Current Feature
+# Current Feature: Admin Item Management MVP
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Add bullet points of what success looks like -->
+- Wire the existing scaffolded Add Device modal to a real `createItem` server action that persists a new `Item` to Prisma (Name, Brand, Purchase date, Status required; Notes optional).
+- Add a per-item Edit flow: clicking the Edit action on an admin item card opens the same form prefilled with the item's current data and persists updates via an `updateItem` server action.
+- Add a per-item Repair toggle: clicking the Wrench action flips status `AVAILABLE` ↔ `REPAIR` atomically, server-side blocked when status is `IN_USE`.
+- Centralize the new item-mutation logic in a DAL (mirroring the rental-actions pattern) so guards aren't duplicated between create / update / repair-toggle paths and so the form layer stays presentational.
+- Surface success / failure feedback through the Phase 2 Sonner toaster — error copy comes from a typed error map, not stringly-typed messages.
+- Revalidate `/admin` and `/hardware` after every mutation so both inventory views reflect new state.
+- Cover the critical paths with future unit tests (deferred — Vitest still isn't installed).
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- Spec: [admin-item-crud-spec.md](context/features/admin-item-crud-spec.md). Out of scope this phase: device deletion and advanced administration flows.
+- DAL in `src/lib/db/item-mutations.ts` (new) with `createItem` / `updateItem` / `toggleRepair`. Wrap each in `prisma.$transaction` only where atomicity matters (toggleRepair uses an `updateMany` with a status filter so a concurrent rent doesn't race past the IN_USE guard); create / update can be single statements.
+- Server actions in `src/actions/items.ts` (new) marked `"use server"`. Each one calls `requireAdmin()` first (defense-in-depth — the `(app)/admin` layout already gates the page, but the action might be invoked from elsewhere), zod-validates the payload, calls the DAL, then `revalidatePath('/admin')` + `revalidatePath('/hardware')`. Return the same `{ success, error? }` shape the rental actions use.
+- Reuse the form: extract the existing `AddDeviceDialog` body into a shared `<DeviceForm />` (or thread a `mode: 'create' | 'edit'` prop) — RHF + zod + `Controller` Selects for brand / status, plus the existing field-error styling. Keep `AddDeviceDialog` as the trigger button in the inventory header (its current "Add Device" CTA), and add a new `EditDeviceDialog` opened from `AdminItemActions`. The shared form component handles both flows with the same zod schema.
+- Wire `AdminItemActions` (currently disabled Edit / Wrench / Delete cluster): Edit → opens `EditDeviceDialog`; Wrench → calls `toggleRepairAction({ itemId })`, disabled with a tooltip when `status === 'IN_USE'`; Delete stays disabled (out of scope).
+- Brand input: the existing scaffold uses a `Select` driven by the distinct brands from `getItems()`. Keep that, but add a "type a new brand" affordance later — for this phase the Select is fine because seed data already covers all in-fleet brands.
+- Status enum: `AVAILABLE` / `IN_USE` / `REPAIR`. On create, `assignedTo` and `returnDate` MUST be null regardless of input. If admin creates an item with status `IN_USE`, that's an inconsistent state we should reject in zod — only `AVAILABLE` and `REPAIR` are valid create-time statuses. `IN_USE` is owned by the rental workflow.
+- Edit guard: editing an item in `IN_USE` should not be allowed to silently flip status (it would orphan the rental). Either disable the status field when editing an `IN_USE` item, or constrain the schema. Simplest: when prefilling for an `IN_USE` item, lock the Status select to `IN_USE` (read-only) and the form omits status from the update payload.
+- `purchaseDate` continues to be stored as `Date | null` in Prisma but the form ships an ISO `yyyy-mm-dd` string; convert at the action boundary. Empty string → null.
+- Toasts: success → `toast.success(...)`, errors → `toast.error('Operation failed', { description: res.error })`, mirroring the rent/return phase. No inline form error for action failures — keep field-level errors for zod, surface mutation errors via Sonner.
+- Use Context7 to confirm the latest Next.js 16 server-action conventions and the shadcn Dialog + Form pattern (note: shadcn `form` isn't shipped in `base-nova` — keep wiring RHF + zod manually, same as the existing dialog).
+- Migration discipline: no `db push`. The Prisma schema for `Item` already has every field we need; no migration required this phase.
+- Vitest is still not installed (carryover note from Phases 1 & 2). The new mutation guards (especially `toggleRepair`'s IN_USE rejection) are good unit-test targets but stay deferred until the test harness lands.
 
 ## History
 
