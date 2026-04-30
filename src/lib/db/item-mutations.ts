@@ -83,6 +83,27 @@ export async function updateItem(
   return { ok: true };
 }
 
+export async function deleteItem(input: {
+  itemId: string;
+}): Promise<ItemMutationResult> {
+  const { itemId } = input;
+
+  return prisma.$transaction(async (tx) => {
+    const result = await tx.item.deleteMany({
+      where: { id: itemId, status: { not: "IN_USE" } },
+    });
+    if (result.count > 0) return { ok: true } as const;
+
+    const item = await tx.item.findUnique({
+      where: { id: itemId },
+      select: { status: true },
+    });
+    if (!item) return { ok: false, error: "NOT_FOUND" } as const;
+    if (item.status === "IN_USE") return { ok: false, error: "IN_USE" } as const;
+    return { ok: false, error: "RACE" } as const;
+  });
+}
+
 export async function toggleRepair(input: {
   itemId: string;
 }): Promise<ItemMutationResult<{ status: ItemStatus }>> {
