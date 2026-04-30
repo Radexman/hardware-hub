@@ -118,7 +118,7 @@ export function CreateUserDialog() {
         <form
           key={formKey}
           onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col gap-4"
+          className="flex flex-col gap-5 py-2"
           noValidate
         >
           <div>

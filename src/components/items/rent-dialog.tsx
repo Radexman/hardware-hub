@@ -88,7 +88,7 @@ export function RentDialog({
           <DialogDescription>{item.brand} · Available</DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4 py-2">
           <span className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
             Return in
           </span>

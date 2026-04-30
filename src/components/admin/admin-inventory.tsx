@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
 import type { Item, ItemStatus } from "@/lib/mock-data";
-import { cn } from "@/lib/utils";
+import { FILTER_ACTIVE_BUTTON, cn } from "@/lib/utils";
 
 type SortKey = "name" | "brand" | "date" | "status";
 
@@ -55,9 +55,6 @@ function compareItems(a: Item, b: Item, sortKey: SortKey): number {
       return STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
   }
 }
-
-const ACTIVE_BUTTON =
-  "bg-brand text-brand-foreground border-brand hover:bg-brand/90 hover:text-brand-foreground";
 
 export function AdminInventory({
   items,
@@ -119,7 +116,7 @@ export function AdminInventory({
                   variant="outline"
                   size="sm"
                   onClick={() => setSortKey(option.key)}
-                  className={cn(isActive && ACTIVE_BUTTON)}
+                  className={cn(isActive && FILTER_ACTIVE_BUTTON)}
                   aria-pressed={isActive}
                 >
                   {option.label}
