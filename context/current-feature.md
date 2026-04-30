@@ -1,16 +1,29 @@
-# Current Feature
+# Current Feature: Admin User Management MVP
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Add bullet points of what success looks like -->
+- Wire the existing scaffolded `CreateUserDialog` to a real `createUser` server action that persists a new `User` to Prisma (Name, Email, Password, Role required).
+- Hash the password with bcryptjs (12 rounds) matching the existing seed / Credentials authorize logic.
+- Enforce email uniqueness server-side and surface a typed `DUPLICATE_EMAIL` error so the dialog can show a clean toast (not a raw Prisma `P2002`).
+- Restrict the action to admins via `requireAdmin()` (defense-in-depth on top of the `authorized` callback already gating `/admin`).
+- Sonner toasts for success / failure, mirroring the patterns from the rental + admin-item phases.
+- Revalidate `/admin` after every successful create so the users list reflects the new account.
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- Spec: [admin-user-crud-spec.md](context/features/admin-user-crud-spec.md). Out of scope: user editing, deletion, deactivation, password reset, role management beyond create-time assignment.
+- DAL in `src/lib/db/user-mutations.ts` (new) with `createUser` — typed `UserMutationErrorCode` union (`DUPLICATE_EMAIL`, optionally `INVALID_INPUT` if needed) + `USER_MUTATION_ERROR_MESSAGE` map, mirroring the `item-mutations.ts` shape from the previous phase. `createUser` hashes the password (bcrypt 12 rounds) and inserts via Prisma; catches `P2002` on the email unique index and returns `{ ok: false, error: 'DUPLICATE_EMAIL' }`.
+- Server action in `src/actions/users.ts` (new) marked `"use server"`. Sequence: `requireAdmin()` → zod-validate `{ name, email, password, role }` (email via `z.email()`, password `min(8)` recommended, role `z.enum(['USER', 'ADMIN'])`) → call DAL → `revalidatePath('/admin')` on success → return `{ success, error? }` shape consistent with the other actions.
+- Reuse the existing `CreateUserDialog` scaffold (RHF + zod + Controller `Select` for Role) — the field schema is already there; just rewire the submit handler to call `createUserAction`, surface a Sonner success/error toast, and close + reset on success (use the same `formKey` bump trick the device dialogs use).
+- Password handling: never log or echo the password; never send it back from the action; always hash server-side. The bcrypt cost factor (12) must match `prisma/seed.ts` and `src/auth.ts`'s `Credentials.authorize`.
+- Email normalization: trim + lowercase the email at the action boundary before zod parsing so duplicate-email checks aren't bypassed by case differences (the DB index is case-sensitive).
+- Migration discipline: no `db push`. The Prisma `User` model already has `@unique` on email and every other field needed; no migration required.
+- Use Context7 to confirm the latest Next.js 16 server-action conventions and the bcryptjs API (the seed uses `bcrypt.hash(plain, 12)` — match that exactly so password hashes are interchangeable).
+- Carry forward the Vitest deferral note — tests for the create-user duplicate-email branch and the bcrypt-hash invariant are good unit-test targets but stay queued until the test harness lands.
 
 ## History
 
