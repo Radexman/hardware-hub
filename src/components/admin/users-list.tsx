@@ -8,7 +8,13 @@ import { UserCard, type UserCardView } from "@/components/admin/user-card";
 import { ViewToggle } from "@/components/items/view-toggle";
 import type { UserListItem } from "@/lib/db/users";
 
-export function UsersList({ users }: { users: UserListItem[] }) {
+export function UsersList({
+  users,
+  currentUserId,
+}: {
+  users: UserListItem[];
+  currentUserId: string;
+}) {
   const [view, setView] = useState<UserCardView>("list");
 
   return (
@@ -43,7 +49,9 @@ export function UsersList({ users }: { users: UserListItem[] }) {
               key={user.id}
               user={user}
               view="grid"
-              action={<AdminUserActions />}
+              action={
+                <AdminUserActions user={user} currentUserId={currentUserId} />
+              }
             />
           ))}
         </div>
@@ -54,7 +62,9 @@ export function UsersList({ users }: { users: UserListItem[] }) {
               key={user.id}
               user={user}
               view="list"
-              action={<AdminUserActions />}
+              action={
+                <AdminUserActions user={user} currentUserId={currentUserId} />
+              }
             />
           ))}
         </div>

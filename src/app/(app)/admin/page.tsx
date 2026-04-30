@@ -16,13 +16,13 @@ async function AdminInventoryLoader() {
   return <AdminInventory items={items} brandOptions={brandOptions} />;
 }
 
-async function UsersLoader() {
+async function UsersLoader({ currentUserId }: { currentUserId: string }) {
   const users = await getUsers();
-  return <UsersList users={users} />;
+  return <UsersList users={users} currentUserId={currentUserId} />;
 }
 
 export default async function AdminPage() {
-  await requireAdmin();
+  const session = await requireAdmin();
 
   return (
     <div className="flex flex-col gap-12">
@@ -30,7 +30,7 @@ export default async function AdminPage() {
         <AdminInventoryLoader />
       </Suspense>
       <Suspense fallback={<UsersSkeleton />}>
-        <UsersLoader />
+        <UsersLoader currentUserId={session.user.id} />
       </Suspense>
     </div>
   );
