@@ -18,9 +18,13 @@ Hardware Hub manages:
 
 Hardware Hub is an internal tool where employees browse and rent equipment while administrators manage inventory, repairs, and user access. The project emphasizes AI-native product thinking, spec-driven delivery, and a documented human + AI engineering workflow.
 
+Live demo:
+https://hardware-hub-azure.vercel.app/login
+
 ## Core MVP Features
 
 ### Inventory & Rentals
+
 - Hardware catalog with grid + list views
 - Search, sorting, and status filters
 - Rent / return workflows with confirmation modals
@@ -29,12 +33,14 @@ Hardware Hub is an internal tool where employees browse and rent equipment while
 - Repair-state lifecycle (Available ↔ In Use ↔ Repair)
 
 ### Admin
+
 - Full device CRUD (create / edit / delete) with race-safe guards
 - Repair-toggle action
 - Admin user CRUD: onboarding, edit (name + role), delete with self-delete / last-admin / active-rentals guards
 - Protected admin routes (route-level + defense-in-depth in actions)
 
 ### Platform
+
 - Credentials authentication (Auth.js v5)
 - Role-based access control (USER / ADMIN)
 - Server actions for all mutations
@@ -74,8 +80,6 @@ AUTH_URL=
 OPENAI_API_KEY=   # optional – AI search falls back to empty results when missing
 ```
 
-Live demo: `[add deployment url]`
-
 ---
 
 # Implementation Status & Trade-offs
@@ -96,40 +100,44 @@ Honest, transparent breakdown of what's shipped, where corners were cut, and wha
 ## ⚡ Shortcuts & Hacks
 
 ### `bcryptjs` over native `bcrypt`
+
 - **Why**: Pure-JS implementation works in any Node runtime without a build step or platform-specific binary, which keeps Vercel + local dev identical and avoids serverless cold-start headaches.
 - **Future**: For production at scale, switch to native `bcrypt` (or argon2id) on a long-lived runtime where the speed delta matters; tune the cost factor based on observed login latency.
 
 ### JWT sessions instead of database sessions
+
 - **Why**: Every read of `session.user.role` would otherwise hit Postgres. JWT keeps the proxy edge-fast and avoids a hot table.
 - **Future**: For audit trails and instant session revocation (e.g. "log this user out everywhere now"), swap to DB sessions and add a `sessionVersion` column to invalidate-on-role-change.
 
 ### Patched generated Sonner component
+
 - **Why**: shadcn's generated `sonner.tsx` imports `next-themes`, but the project sets `<html class="dark">` directly. I patched the generated file to drop the dependency and hardcode `theme="dark"` rather than installing `next-themes` only to ignore it.
 - **Future**: If light mode is added, restore `next-themes` and the original component, plus a theme switcher in the sidebar.
 
 ### `Item.assignedTo` references `User.email` (not `userId`)
+
 - **Why**: The schema was drafted before auth landed. Email was the natural human-readable join key for the rental flow. `User.email` is `@unique` so the FK is sound.
 - **Future**: Refactor to `userId` so the rental DAL stops needing the email round-trip and email changes (out of scope for MVP) wouldn't ripple through the FK.
 
 ### `ACTIVE_RENTALS` guard on user delete
+
 - **Why**: The schema's `Item.assignedTo` → `User.email` relation has no `onDelete`, so it defaults to RESTRICT. Rather than letting a confusing FK violation surface to the admin, I added an up-front count-and-reject guard with friendly Sonner copy.
 - **Future**: Implement rental ownership reassignment so admins can transfer active rentals before deletion, or add a soft-delete / deactivation distinction.
 
 ### Playwright e2e instead of Vitest unit tests
+
 - **Why**: The recruitment task asks for "3 critical tests". E2E specs covering real user flows give higher confidence than mocked unit tests for an MVP and exercise the full stack (auth → action → DB → revalidation → UI).
 - **Future**: Wire Vitest for fast DAL-level coverage of the guard logic (rental state machine, last-admin / self-delete branches), where unit tests give faster feedback than spinning up Chromium.
 
 ### `OPENAI_API_KEY` fallback to `[]`
+
 - **Why**: A free-tier OpenAI key returns `429 insufficient_quota`. Rather than crashing the search UI for reviewers without billing enabled, the lib catches the error, logs `[ai-search] OpenAI call failed`, and returns an empty match list.
 - **Future**: Replace with a clear UI state ("AI search temporarily unavailable") and a retry-with-backoff path. Cache hot queries.
 
 ## ⚠️ Partial / Missing
 
-- **Vitest** — `npm test` still resolves but no Vitest is wired; DAL-level unit coverage is queued.
-- **Password reset / email change** — out of scope per the user CRUD phase 2 spec. Admins currently re-create users to "reset".
-- **Rental ownership reassignment** — admins must wait for the renter to return the device before deleting that account.
-- **Audit logs** — `RentalHistory` captures rent/return events but not admin mutations (item edits, role changes, deletions).
-- **Soft delete vs hard delete** — both items and users are hard-deleted with cascade. No recovery flow.
+- **Vitest unit tests** — `npm test` still resolves but no Vitest is wired. DAL-level guard coverage (rental state machine, `deleteUser` guard ordering, AI search id-validation) is queued.
+- **Password reset / email change** — out of scope this phase; admins currently re-create users to "reset". Real account lifecycle gap.
 - **AI features beyond search** — Smart Assistant chat and Inventory Auditor (per the assignment's three options) were de-scoped to keep semantic search polished. Inventory Auditor is a natural fit for the seeded data-quality issues — see the 24h roadmap below.
 
 ## 🔮 Next Steps (24h Roadmap)
@@ -168,13 +176,13 @@ Each fix was made deliberately in `prisma/seed.ts` rather than scrubbed away —
 
 I also seeded `j.doe@booksy.com` and `a.smith@booksy.com` as real `User` rows so the existing `RentalHistory` foreign keys and `assignedTo` references resolve properly — without that, item_7 (`assignedTo: "j.doe@booksy.com"`) would have produced an orphan reference.
 
-A natural follow-up (see [24h Roadmap](#-next-steps-24h-roadmap)) is the **Inventory Auditor** AI feature, which would ingest the *unnormalized* dataset and have the model itself flag exactly these issue categories — turning the data-quality story into a live demo.
+A natural follow-up (see [24h Roadmap](#-next-steps-24h-roadmap)) is the **Inventory Auditor** AI feature, which would ingest the _unnormalized_ dataset and have the model itself flag exactly these issue categories — turning the data-quality story into a live demo.
 
 ## Prompt Trail
 
 Rather than capturing raw chat logs (which decay quickly and don't reflect architectural intent), the AI collaboration trail in this repo is structured into three stable artifacts:
 
-1. **`context/features/`** — every feature was scoped as a markdown spec *before* implementation. The spec is the prompt. There are 22 specs covering every phase from initial Next.js setup through admin user CRUD phase 2.
+1. **`context/features/`** — every feature was scoped as a markdown spec _before_ implementation. The spec is the prompt. There are 22 specs covering every phase from initial Next.js setup through admin user CRUD phase 2.
 2. **`context/current-feature.md`** — chronological history of every shipped phase, written in implementation language with file paths, tradeoffs, and known caveats. This functions as the running architectural decision record.
 3. **`.claude/skills/feature/`** — custom Claude Code skill that codifies the `load → start → review → test → complete` loop, ensuring spec-driven delivery rather than ad-hoc prompting.
 
@@ -188,7 +196,7 @@ I asked Claude to add an admin-route gate so non-admin users hitting `/admin` wo
 
 Switching to a USER-role login surfaced the bug: every authed user was being bounced from `/admin`, even admins after their JWT refreshed. The cause: the `jwt` and `session` callbacks that copy `role` onto the token had been added to `src/auth.ts` rather than `src/auth.config.ts`. The proxy uses the **edge-safe** config (it can't import the Prisma adapter), so the edge-side `auth` call was reading a token where `role` was `undefined` — and `undefined !== "ADMIN"` is always true.
 
-The fix was to move the `jwt` + `session` callbacks into `src/auth.config.ts` so both the full Node runtime *and* the edge proxy see the same enriched session. I also added `getSession()` / `requireSession()` / `requireAdmin()` helpers in `src/lib/auth.ts` so server components have one obvious way to gate routes — and called `await requireAdmin()` directly inside `/admin/page.tsx` for defense-in-depth, so even a future proxy-misconfiguration regression couldn't expose admin pages.
+The fix was to move the `jwt` + `session` callbacks into `src/auth.config.ts` so both the full Node runtime _and_ the edge proxy see the same enriched session. I also added `getSession()` / `requireSession()` / `requireAdmin()` helpers in `src/lib/auth.ts` so server components have one obvious way to gate routes — and called `await requireAdmin()` directly inside `/admin/page.tsx` for defense-in-depth, so even a future proxy-misconfiguration regression couldn't expose admin pages.
 
 The lesson I took away: **AI can't smell architectural splits like edge-safe vs full-runtime config until they bite at runtime**. Catching it required actually testing both roles end-to-end in a browser, not just reading the diff. This is now part of my own feature-completion checklist regardless of who wrote the code.
 
@@ -241,15 +249,15 @@ context/
   screenshots/
 ```
 
-| Artifact                    | Purpose                                                                  |
-| --------------------------- | ------------------------------------------------------------------------ |
-| `project-overview.md`       | Product architecture, domain rules, and technical constraints            |
-| `coding-standards.md`       | TypeScript / React / Tailwind v4 / Prisma conventions                    |
-| `ai-interaction.md`         | Communication and workflow guidelines for AI collaboration               |
-| `current-feature.md`        | Active feature spec + chronological implementation history (decision log)|
-| `features/`                 | Phased feature specs (used as structured implementation prompts)         |
-| `screenshots/`              | Visual UI references that guided implementation                          |
-| `.claude/skills/feature/`   | Custom Claude skill commands supporting the workflow above               |
+| Artifact                  | Purpose                                                                   |
+| ------------------------- | ------------------------------------------------------------------------- |
+| `project-overview.md`     | Product architecture, domain rules, and technical constraints             |
+| `coding-standards.md`     | TypeScript / React / Tailwind v4 / Prisma conventions                     |
+| `ai-interaction.md`       | Communication and workflow guidelines for AI collaboration                |
+| `current-feature.md`      | Active feature spec + chronological implementation history (decision log) |
+| `features/`               | Phased feature specs (used as structured implementation prompts)          |
+| `screenshots/`            | Visual UI references that guided implementation                           |
+| `.claude/skills/feature/` | Custom Claude skill commands supporting the workflow above                |
 
 ---
 
@@ -258,7 +266,9 @@ context/
 Three MCP servers participated in the AI workflow:
 
 ## Context7 MCP
+
 Pulls live documentation for libraries / frameworks / SDKs / CLIs into the model's context, even for ones it nominally "knows" (training cutoffs lie about new APIs). Used heavily for:
+
 - Next.js 16 App Router conventions (especially the `proxy.ts` rename from `middleware.ts`)
 - Auth.js v5 configuration patterns and edge-safe split config
 - Prisma 7 client + new `prisma-client` generator + Neon adapter setup
@@ -266,14 +276,18 @@ Pulls live documentation for libraries / frameworks / SDKs / CLIs into the model
 - shadcn/ui component installation and the base-ui-backed primitives
 
 ## Neon MCP
+
 Direct access to the Neon serverless Postgres branches for inspection and verification:
+
 - Verifying seed runs (row counts, data normalization)
 - Querying live state during rental / repair workflow debugging
 - Schema validation during Prisma migration work
 - Confirming prod-branch seeding via `db:test:prod`
 
 ## Playwright MCP
+
 Browser automation during development:
+
 - Smoke-testing user flows after UI changes (login → rent → return → log out)
 - Validating dialog padding and responsive behavior under the `sm:max-w-md` envelope
 - Cross-checking that revalidation + optimistic updates behave correctly under real network timing
@@ -285,6 +299,7 @@ These three were chosen deliberately. Each plugs a hole the model can't fill fro
 # Tech Stack
 
 **Frontend**
+
 - Next.js 16 (App Router, Turbopack)
 - React 19
 - TypeScript (strict)
@@ -295,6 +310,7 @@ These three were chosen deliberately. Each plugs a hole the model can't fill fro
 - React Hook Form + Zod for form validation
 
 **Backend**
+
 - Prisma 7 (`prisma-client` generator)
 - Neon serverless Postgres (`@prisma/adapter-neon`)
 - Auth.js v5 (Credentials provider, JWT sessions)
@@ -302,9 +318,11 @@ These three were chosen deliberately. Each plugs a hole the model can't fill fro
 - Server Actions for all mutations
 
 **AI**
+
 - OpenAI SDK + `gpt-5-nano` for semantic search (JSON-mode, server-validated id list)
 
 **Tooling**
+
 - ESLint v9 (flat config)
 - Playwright (Chromium-only, serial workers for DB-touching tests)
 - `dotenv-cli` for explicit prod-target scripts
@@ -313,19 +331,19 @@ These three were chosen deliberately. Each plugs a hole the model can't fill fro
 
 # Useful Scripts
 
-| Script                       | Description                              |
-| ---------------------------- | ---------------------------------------- |
-| `npm run dev`                | Start dev server (Turbopack)             |
-| `npm run build`              | Production build                         |
-| `npm run lint`               | Run ESLint                               |
-| `npm test`                   | Vitest (placeholder — see roadmap)       |
-| `npm run test:e2e`           | Playwright critical-path suite           |
-| `npm run test:e2e:ui`        | Playwright in interactive UI mode        |
-| `npx prisma migrate dev`     | Apply migrations to dev branch           |
-| `npx prisma db seed`         | Seed demo data                           |
+| Script                           | Description                          |
+| -------------------------------- | ------------------------------------ |
+| `npm run dev`                    | Start dev server (Turbopack)         |
+| `npm run build`                  | Production build                     |
+| `npm run lint`                   | Run ESLint                           |
+| `npm test`                       | Vitest (placeholder — see roadmap)   |
+| `npm run test:e2e`               | Playwright critical-path suite       |
+| `npm run test:e2e:ui`            | Playwright in interactive UI mode    |
+| `npx prisma migrate dev`         | Apply migrations to dev branch       |
+| `npx prisma db seed`             | Seed demo data                       |
 | `npm run db:migrate:deploy:prod` | Apply migrations to prod Neon branch |
-| `npm run db:seed:prod`       | Seed prod Neon branch                    |
-| `npm run db:test:prod`       | Verify prod seed (row counts)            |
+| `npm run db:seed:prod`           | Seed prod Neon branch                |
+| `npm run db:test:prod`           | Verify prod seed (row counts)        |
 
 ---
 
