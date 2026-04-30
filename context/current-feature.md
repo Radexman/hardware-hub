@@ -1,16 +1,33 @@
-# Current Feature
+# Current Feature: AI Semantic Search — MVP
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Add bullet points of what success looks like -->
+- Add a Basic / AI mode toggle to the hardware search bar — Basic (default) keeps the existing fuzzy filter untouched, AI mode swaps in a server-action-driven natural-language filter.
+- Build a server action `aiSearchItems(query, items)` that calls the OpenAI Chat API with a minimal item payload, asks for a strict JSON array of matching item IDs, and returns `string[]` (or `[]` on any failure — never crashes the UI).
+- Filter the inventory client-side by the returned IDs and render results through the existing `ItemCard` grid/list views.
+- Loading state on the search input during the AI call (disabled input, sparkle/spinner indication) so users see the request in flight.
+- Empty-state copy when AI mode returns zero matches: "No AI matches found".
+- All OpenAI calls happen server-side only; `OPENAI_API_KEY` is never exposed to the client and missing-key cases degrade to the empty-result fallback.
+- Do not modify existing fuzzy search, do not add new DB queries, do not introduce embeddings or caching.
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- Spec: [ai-integration-spec.md](context/features/ai-integration-spec.md). Out of scope: embeddings / vector search, semantic indexing, chat UI, query memory, caching, ranking.
+- Model: project overview specifies OpenAI `gpt-5-nano`. Use the official `openai` npm SDK with the Chat Completions API. Keep the prompt small and the JSON contract strict; on parse failure log and fall back to `[]`.
+- Server action lives in `src/actions/search.ts` (new), marked `"use server"`. Sequence: zod-validate `{ query: string.min(1).max(200), items: minimal[] }`, cap items at 50 server-side, build a tightly-scoped system prompt ("You are a hardware-search assistant. Return ONLY a JSON array of matching item ids from the supplied catalog. Prefer AVAILABLE items. Match by intent, not keyword."), include the user query and the trimmed catalog, request `response_format: { type: 'json_object' }` if the SDK shape requires an object wrapper (we'll wrap as `{ ids: string[] }` and unwrap on parse), and validate the parsed `ids[]` are all strings present in the input catalog before returning. On any thrown error → log + return `[]`.
+- Inventory payload from the client: `{ id, name, brand, status, notes }` only — no `assignedTo`, `returnDate`, or `purchaseDate`. Strip noise to keep the prompt cheap and avoid leaking PII into OpenAI.
+- Trigger semantics: AI search fires on Enter (or an explicit Search button) — do NOT debounce-on-keystroke, that burns tokens needlessly. Basic mode keeps its existing real-time `onChange` behaviour.
+- UI changes in `HardwareList` only: add a `mode: 'basic' | 'ai'` state, a `ButtonGroup` toggle near the search input, an `aiResultIds: string[] | null` state (`null` = AI search not yet run), and a `pending` flag via `useTransition`. The `Sparkles` icon in the search bar lights up in the brand cyan when AI mode is active and animates while pending. Empty state branches: AI mode + `aiResultIds === null` → show normal "press Enter to search with AI" hint OR keep the basic-style filtered list; AI mode + `aiResultIds.length === 0` → "No AI matches found".
+- `OPENAI_API_KEY` belongs in `.env` (dev) and `.env.production`; document the variable in `.env.example`. The action must check for the missing key and return `[]` (with a server-side warning log) instead of letting the SDK throw — this keeps the demo usable without a key.
+- Don't introduce a hard runtime dep on the API succeeding: the action's contract is "best-effort filter; returns `[]` if anything goes wrong". The UI treats `[]` as a real result ("No AI matches found") and treats only `null` as "haven't run yet".
+- Toast on AI failure is optional per spec — keep it silent for the MVP and only surface visible failure if the SDK signals an obvious mis-config (e.g. 401). Easier to ship without and add later.
+- Keep the action's input minimal and validated — if a malicious caller ships 5000 items, the cap-to-50 trim happens server-side. The query length cap defends against runaway prompts.
+- Existing Playwright e2e suite (auth / rental / admin-user) should still pass without modification; this phase doesn't change any of those flows. Add a new e2e for AI search only if it can be written without burning real OpenAI calls (probably not in scope this phase — leave it as manual testing per the spec).
+- Migration discipline: no schema or seed changes required.
 
 ## History
 
