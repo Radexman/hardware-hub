@@ -356,6 +356,6 @@ These four artifacts capture the architectural and AI-collaboration decisions be
 
 # Deployment
 
-Live demo: `[add deployment url]`
+Live demo: https://hardware-hub-azure.vercel.app/login
 
 Prod Neon branch is already migrated and seeded; deployment is a Vercel project import + env-var setup away.
