@@ -1,16 +1,32 @@
-# Current Feature
+# Current Feature: Admin Item CRUD — Phase 2 (Delete)
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Add bullet points of what success looks like -->
+- Wire the existing scaffolded Delete button in `AdminItemActions` to a real `deleteItemAction` server action that removes an `Item` row from Prisma after confirmation.
+- Use shadcn `AlertDialog` for the confirmation step (Title: "Delete Device", Description: "This action cannot be undone.", Cancel + Confirm Delete actions).
+- Enforce the critical guard server-side: an item with status `IN_USE` cannot be deleted. The DAL returns a typed `IN_USE` error so the UI can show a clean Sonner toast instead of a Prisma stack trace.
+- Disable the Delete trigger in the UI when `item.status === 'IN_USE'` with a tooltip ("Items in use cannot be deleted") for defense-in-depth — the server guard remains the source of truth.
+- Use destructive styling for the Confirm Delete action so the destructive intent is visually clear.
+- Revalidate `/admin` and `/hardware` after a successful delete so both inventory views drop the row.
+- Sonner success/failure toasts mirror the Phase 1 admin-item create / edit / repair-toggle pattern.
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- Spec: [admin-item-crud-2-spec.md](context/features/admin-item-crud-2-spec.md). Out of scope: soft delete / archival, audit logs, rental-history cleanup, bulk delete.
+- DAL in `src/lib/db/item-mutations.ts` (existing) — extend with a `deleteItem({ itemId })` function that wraps a `prisma.$transaction` and uses `deleteMany({ where: { id, status: { not: 'IN_USE' } } })` so a concurrent rent right between the read and the delete cannot succeed past the IN_USE guard. If `count === 0`, fall back to a follow-up `findUnique` to distinguish `NOT_FOUND` vs `IN_USE` for the error code.
+- Reuse the existing `ItemMutationErrorCode` union (`NOT_FOUND` | `IN_USE` | `INVALID_STATUS` | `RACE`) and `ITEM_MUTATION_ERROR_MESSAGE` map — they already have `NOT_FOUND` and `IN_USE` copy that fits this flow.
+- Server action in `src/actions/items.ts` (existing) — add `deleteItemAction({ itemId })`: `requireAdmin()` → zod-validate `itemId` → call `deleteItem` → on success `revalidatePath('/admin')` + `revalidatePath('/hardware')` → return `{ success, error? }`. Same shape as the other admin-item actions.
+- Cascade: the Prisma schema already has `onDelete: Cascade` on `RentalHistory.itemId`, so deleting an `Item` row automatically removes its history. No manual cleanup needed and the spec explicitly excludes rental-history cleanup from scope.
+- AlertDialog primitive: shadcn `alert-dialog` is not yet installed in `src/components/ui/`. Add it via `npx shadcn@latest add alert-dialog` and use it directly — keep the dialog colocated in a new `DeleteDeviceDialog` client component (similar shape to the existing `EditDeviceDialog`), not inlined into `AdminItemActions`.
+- Loading / disabled state: drive the Confirm Delete button via `useTransition`; show "Deleting..." copy while pending and disable Cancel + the trigger to prevent double-submits. Close the dialog on success before the toast fires; leave it open on failure so the user sees the error and can retry or cancel.
+- `AdminItemActions` already shows a disabled Trash2 button — replace it with the new `DeleteDeviceDialog` trigger. Keep the button visually destructive (`variant="destructive"` if the shadcn Button primitive supports it, else custom red styling matching the existing repair button's tone).
+- Migration discipline: no schema changes needed (the `Item` model already supports deletion via Prisma). No migration this phase.
+- Existing Playwright e2e suite (auth / rental / admin-user / no AI test) still passes. The rental test rents and returns the same item, so it never deletes anything; the admin-user test creates users but doesn't touch items. No regression risk if we keep button labels / aria-labels consistent.
+- Vitest still not installed — the `deleteItem` DAL `IN_USE` guard and the new error-code path through `deleteItemAction` are good unit-test targets queued for the Vitest-scaffold follow-up.
 
 ## History
 

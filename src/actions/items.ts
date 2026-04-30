@@ -7,6 +7,7 @@ import { requireAdmin } from "@/lib/auth";
 import {
   ITEM_MUTATION_ERROR_MESSAGE,
   createItem,
+  deleteItem,
   toggleRepair,
   updateItem,
 } from "@/lib/db/item-mutations";
@@ -43,6 +44,10 @@ const updateSchema = z.object({
 });
 
 const toggleSchema = z.object({
+  itemId: z.string().min(1, "Missing item id"),
+});
+
+const deleteSchema = z.object({
   itemId: z.string().min(1, "Missing item id"),
 });
 
@@ -113,6 +118,29 @@ export async function updateItemAction(input: {
     notes: parsed.data.notes ? parsed.data.notes : null,
     status: parsed.data.status,
   });
+
+  if (!result.ok) {
+    return {
+      success: false,
+      error: ITEM_MUTATION_ERROR_MESSAGE[result.error],
+    };
+  }
+
+  revalidateInventoryViews();
+  return { success: true };
+}
+
+export async function deleteItemAction(input: {
+  itemId: string;
+}): Promise<ActionResult> {
+  await requireAdmin();
+
+  const parsed = deleteSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, error: "Invalid request." };
+  }
+
+  const result = await deleteItem({ itemId: parsed.data.itemId });
 
   if (!result.ok) {
     return {

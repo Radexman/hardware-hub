@@ -1,10 +1,11 @@
 "use client";
 
 import { useTransition } from "react";
-import { Trash2, Wrench } from "lucide-react";
+import { Wrench } from "lucide-react";
 import { toast } from "sonner";
 
 import { toggleRepairAction } from "@/actions/items";
+import { DeleteDeviceDialog } from "@/components/admin/delete-device-dialog";
 import { EditDeviceDialog } from "@/components/admin/edit-device-dialog";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
@@ -52,16 +53,7 @@ export function AdminItemActions({
       >
         <Wrench />
       </Button>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        aria-label="Delete"
-        title="Delete (coming soon)"
-        disabled
-      >
-        <Trash2 />
-      </Button>
+      <DeleteDeviceDialog item={item} />
     </ButtonGroup>
   );
 }
