@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "db:migrate:deploy:prod": "dotenv -e .env.production -- prisma migrate deploy",
     "db:seed:prod": "dotenv -e .env.production -- prisma db seed",
     "db:test:prod": "dotenv -e .env.production -- tsx scripts/test-db.ts"
@@ -37,6 +39,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
