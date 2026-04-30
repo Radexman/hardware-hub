@@ -4,8 +4,10 @@ import { useState } from "react";
 import { UserPlus } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { z } from "zod";
 
+import { createUserAction } from "@/actions/users";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -40,7 +42,7 @@ const formSchema = z.object({
     .trim()
     .min(1, "Email is required")
     .email("Enter a valid email"),
-  password: z.string().min(1, "Password is required"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
   role: z.enum(ROLES),
 });
 
@@ -50,6 +52,7 @@ const fieldError = "text-destructive mt-1 text-xs";
 
 export function CreateUserDialog() {
   const [open, setOpen] = useState(false);
+  const [formKey, setFormKey] = useState(0);
 
   const {
     register,
@@ -67,15 +70,27 @@ export function CreateUserDialog() {
     },
   });
 
-  function onSubmit(values: FormValues) {
-    console.log("[CreateUserDialog] submit", values);
-    reset();
-    setOpen(false);
+  async function onSubmit(values: FormValues) {
+    const res = await createUserAction({
+      name: values.name,
+      email: values.email,
+      password: values.password,
+      role: values.role,
+    });
+    if (res.success) {
+      toast.success(`${values.name} added`, { description: values.email });
+      handleOpenChange(false);
+    } else {
+      toast.error("Could not create user", { description: res.error });
+    }
   }
 
   function handleOpenChange(next: boolean) {
     setOpen(next);
-    if (!next) reset();
+    if (!next) {
+      reset();
+      setFormKey((k) => k + 1);
+    }
   }
 
   return (
@@ -96,11 +111,12 @@ export function CreateUserDialog() {
         <DialogHeader>
           <DialogTitle>Create user</DialogTitle>
           <DialogDescription>
-            Add a new user account. Submission will be logged for now.
+            Add a new user account.
           </DialogDescription>
         </DialogHeader>
 
         <form
+          key={formKey}
           onSubmit={handleSubmit(onSubmit)}
           className="flex flex-col gap-4"
           noValidate
@@ -187,7 +203,7 @@ export function CreateUserDialog() {
               disabled={isSubmitting}
               className="bg-brand text-brand-foreground hover:bg-brand/90"
             >
-              Create
+              {isSubmitting ? "Creating..." : "Create"}
             </Button>
           </DialogFooter>
         </form>
