@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useOptimistic, useState } from "react";
-import { Sparkles } from "lucide-react";
+import { useMemo, useOptimistic, useState, useTransition } from "react";
+import { Loader2, Search, Sparkles } from "lucide-react";
 
 import { rentItemAction, type ActionResult } from "@/actions/rentals";
+import { aiSearchItemsAction } from "@/actions/search";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,7 @@ import type { RentalPeriodDays } from "@/lib/rental-status";
 import { cn } from "@/lib/utils";
 
 type SortKey = "name" | "brand" | "date" | "status";
+type SearchMode = "basic" | "ai";
 
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: "name", label: "Name" },
@@ -57,6 +59,16 @@ function compareItems(a: Item, b: Item, sortKey: SortKey): number {
   }
 }
 
+function toAiPayload(items: Item[]) {
+  return items.map((item) => ({
+    id: item.id,
+    name: item.name,
+    brand: item.brand,
+    status: item.status,
+    notes: item.notes,
+  }));
+}
+
 const ACTIVE_BUTTON =
   "bg-brand text-brand-foreground border-brand hover:bg-brand/90 hover:text-brand-foreground";
 
@@ -64,6 +76,9 @@ export function HardwareList({ items }: { items: Item[] }) {
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [view, setView] = useState<ItemCardView>("grid");
+  const [mode, setMode] = useState<SearchMode>("basic");
+  const [aiResultIds, setAiResultIds] = useState<string[] | null>(null);
+  const [aiPending, startAiTransition] = useTransition();
 
   const [optimisticItems, markRented] = useOptimistic<Item[], string>(
     items,
@@ -83,13 +98,53 @@ export function HardwareList({ items }: { items: Item[] }) {
     return rentItemAction({ itemId, rentalDays });
   }
 
+  function handleModeChange(next: SearchMode) {
+    if (next === mode) return;
+    setMode(next);
+    setAiResultIds(null);
+  }
+
+  function handleAiSubmit() {
+    const trimmed = query.trim();
+    if (!trimmed || aiPending) return;
+    startAiTransition(async () => {
+      const ids = await aiSearchItemsAction({
+        query: trimmed,
+        items: toAiPayload(optimisticItems),
+      });
+      setAiResultIds(ids);
+    });
+  }
+
   const visible = useMemo(() => {
-    const trimmed = query.trim().toLowerCase();
-    const filtered = trimmed
-      ? optimisticItems.filter((item) => matchesQuery(item, trimmed))
-      : optimisticItems;
+    let filtered: Item[];
+    if (mode === "ai") {
+      if (aiResultIds === null) {
+        filtered = optimisticItems;
+      } else {
+        const idSet = new Set(aiResultIds);
+        filtered = optimisticItems.filter((item) => idSet.has(item.id));
+      }
+    } else {
+      const trimmed = query.trim().toLowerCase();
+      filtered = trimmed
+        ? optimisticItems.filter((item) => matchesQuery(item, trimmed))
+        : optimisticItems;
+    }
     return [...filtered].sort((a, b) => compareItems(a, b, sortKey));
-  }, [optimisticItems, query, sortKey]);
+  }, [optimisticItems, query, sortKey, mode, aiResultIds]);
+
+  const aiHasNoMatches =
+    mode === "ai" && aiResultIds !== null && visible.length === 0;
+  const basicHasNoMatches =
+    mode === "basic" && visible.length === 0 && query.trim().length > 0;
+
+  const SearchIcon = mode === "ai" ? Sparkles : Search;
+  const iconClass = cn(
+    "pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2",
+    mode === "ai" ? "text-brand" : "text-muted-foreground",
+    aiPending && "animate-pulse",
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -102,16 +157,70 @@ export function HardwareList({ items }: { items: Item[] }) {
         </p>
       </header>
 
-      <div className="relative">
-        <Sparkles className="text-brand pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2" />
-        <Input
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search hardware..."
-          aria-label="Search hardware"
-          className="h-11 pl-10"
-        />
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
+            Search
+          </span>
+          <ButtonGroup aria-label="Search mode">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => handleModeChange("basic")}
+              className={cn(mode === "basic" && ACTIVE_BUTTON)}
+              aria-pressed={mode === "basic"}
+            >
+              <Search />
+              Basic
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => handleModeChange("ai")}
+              className={cn(mode === "ai" && ACTIVE_BUTTON)}
+              aria-pressed={mode === "ai"}
+            >
+              <Sparkles />
+              AI
+            </Button>
+          </ButtonGroup>
+        </div>
+
+        <div className="relative">
+          {aiPending ? (
+            <Loader2
+              className={cn(
+                "text-brand pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 animate-spin",
+              )}
+            />
+          ) : (
+            <SearchIcon className={iconClass} />
+          )}
+          <Input
+            type="search"
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              if (mode === "ai") setAiResultIds(null);
+            }}
+            onKeyDown={(event) => {
+              if (mode === "ai" && event.key === "Enter") {
+                event.preventDefault();
+                handleAiSubmit();
+              }
+            }}
+            disabled={aiPending}
+            placeholder={
+              mode === "ai"
+                ? "Describe what you need (e.g. \"laptop for development\") and press Enter"
+                : "Search hardware..."
+            }
+            aria-label={mode === "ai" ? "AI search hardware" : "Search hardware"}
+            className="h-11 pl-10"
+          />
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -144,7 +253,11 @@ export function HardwareList({ items }: { items: Item[] }) {
 
       {visible.length === 0 ? (
         <div className="text-muted-foreground border-border rounded-lg border border-dashed p-8 text-center text-sm">
-          No items match your search.
+          {aiHasNoMatches
+            ? "No AI matches found."
+            : basicHasNoMatches
+              ? "No items match your search."
+              : "No items to show."}
         </div>
       ) : view === "grid" ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
