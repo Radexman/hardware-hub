@@ -99,40 +99,20 @@ Honest, transparent breakdown of what's shipped, where corners were cut, and wha
 
 ## ⚡ Shortcuts & Hacks
 
-### `bcryptjs` over native `bcrypt`
-
-- **Why**: Pure-JS implementation works in any Node runtime without a build step or platform-specific binary, which keeps Vercel + local dev identical and avoids serverless cold-start headaches.
-- **Future**: For production at scale, switch to native `bcrypt` (or argon2id) on a long-lived runtime where the speed delta matters; tune the cost factor based on observed login latency.
-
 ### JWT sessions instead of database sessions
 
-- **Why**: Every read of `session.user.role` would otherwise hit Postgres. JWT keeps the proxy edge-fast and avoids a hot table.
+- **Why**: Every read of `session.user.role` would otherwise hit Postgres. JWT keeps the proxy edge-fast and avoids a hot table on every request.
 - **Future**: For audit trails and instant session revocation (e.g. "log this user out everywhere now"), swap to DB sessions and add a `sessionVersion` column to invalidate-on-role-change.
-
-### Patched generated Sonner component
-
-- **Why**: shadcn's generated `sonner.tsx` imports `next-themes`, but the project sets `<html class="dark">` directly. I patched the generated file to drop the dependency and hardcode `theme="dark"` rather than installing `next-themes` only to ignore it.
-- **Future**: If light mode is added, restore `next-themes` and the original component, plus a theme switcher in the sidebar.
 
 ### `Item.assignedTo` references `User.email` (not `userId`)
 
-- **Why**: The schema was drafted before auth landed. Email was the natural human-readable join key for the rental flow. `User.email` is `@unique` so the FK is sound.
-- **Future**: Refactor to `userId` so the rental DAL stops needing the email round-trip and email changes (out of scope for MVP) wouldn't ripple through the FK.
-
-### `ACTIVE_RENTALS` guard on user delete
-
-- **Why**: The schema's `Item.assignedTo` → `User.email` relation has no `onDelete`, so it defaults to RESTRICT. Rather than letting a confusing FK violation surface to the admin, I added an up-front count-and-reject guard with friendly Sonner copy.
-- **Future**: Implement rental ownership reassignment so admins can transfer active rentals before deletion, or add a soft-delete / deactivation distinction.
+- **Why**: The schema was drafted before auth landed. Email was the natural human-readable join key for the rental flow, and `User.email` is `@unique` so the FK is sound. As a consequence I had to add the `ACTIVE_RENTALS` guard on user delete — the relation has no `onDelete` so it defaults to RESTRICT, and rejecting up-front gives admins better copy than a raw FK violation.
+- **Future**: Refactor to `userId` so the rental DAL stops needing the email round-trip and email changes (when added) wouldn't ripple through the FK.
 
 ### Playwright e2e instead of Vitest unit tests
 
 - **Why**: The recruitment task asks for "3 critical tests". E2E specs covering real user flows give higher confidence than mocked unit tests for an MVP and exercise the full stack (auth → action → DB → revalidation → UI).
 - **Future**: Wire Vitest for fast DAL-level coverage of the guard logic (rental state machine, last-admin / self-delete branches), where unit tests give faster feedback than spinning up Chromium.
-
-### `OPENAI_API_KEY` fallback to `[]`
-
-- **Why**: A free-tier OpenAI key returns `429 insufficient_quota`. Rather than crashing the search UI for reviewers without billing enabled, the lib catches the error, logs `[ai-search] OpenAI call failed`, and returns an empty match list.
-- **Future**: Replace with a clear UI state ("AI search temporarily unavailable") and a retry-with-backoff path. Cache hot queries.
 
 ## ⚠️ Partial / Missing
 
