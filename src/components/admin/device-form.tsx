@@ -74,7 +74,7 @@ export function DeviceForm({
       onSubmit={handleSubmit(async (values) => {
         await onSubmit(values);
       })}
-      className="flex flex-col gap-4"
+      className="flex flex-col gap-5 py-2"
       noValidate
     >
       <div>

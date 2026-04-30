@@ -13,7 +13,7 @@ import { RentDialog } from "@/components/items/rent-dialog";
 import { ViewToggle } from "@/components/items/view-toggle";
 import type { Item, ItemStatus } from "@/lib/mock-data";
 import type { RentalPeriodDays } from "@/lib/rental-status";
-import { cn } from "@/lib/utils";
+import { FILTER_ACTIVE_BUTTON, cn } from "@/lib/utils";
 
 type SortKey = "name" | "brand" | "date" | "status";
 type SearchMode = "basic" | "ai";
@@ -68,9 +68,6 @@ function toAiPayload(items: Item[]) {
     notes: item.notes,
   }));
 }
-
-const ACTIVE_BUTTON =
-  "bg-brand text-brand-foreground border-brand hover:bg-brand/90 hover:text-brand-foreground";
 
 export function HardwareList({ items }: { items: Item[] }) {
   const [query, setQuery] = useState("");
@@ -168,7 +165,7 @@ export function HardwareList({ items }: { items: Item[] }) {
               variant="outline"
               size="sm"
               onClick={() => handleModeChange("basic")}
-              className={cn(mode === "basic" && ACTIVE_BUTTON)}
+              className={cn(mode === "basic" && FILTER_ACTIVE_BUTTON)}
               aria-pressed={mode === "basic"}
             >
               <Search />
@@ -179,7 +176,7 @@ export function HardwareList({ items }: { items: Item[] }) {
               variant="outline"
               size="sm"
               onClick={() => handleModeChange("ai")}
-              className={cn(mode === "ai" && ACTIVE_BUTTON)}
+              className={cn(mode === "ai" && FILTER_ACTIVE_BUTTON)}
               aria-pressed={mode === "ai"}
             >
               <Sparkles />
@@ -238,7 +235,7 @@ export function HardwareList({ items }: { items: Item[] }) {
                   variant="outline"
                   size="sm"
                   onClick={() => setSortKey(option.key)}
-                  className={cn(isActive && ACTIVE_BUTTON)}
+                  className={cn(isActive && FILTER_ACTIVE_BUTTON)}
                   aria-pressed={isActive}
                 >
                   {option.label}
