@@ -7,6 +7,8 @@ import { requireAdmin } from "@/lib/auth";
 import {
   USER_MUTATION_ERROR_MESSAGE,
   createUser,
+  deleteUser,
+  updateUser,
 } from "@/lib/db/user-mutations";
 
 export type ActionResult<T = undefined> =
@@ -47,4 +49,71 @@ export async function createUserAction(input: {
 
   revalidatePath("/admin");
   return { success: true, data: result.data };
+}
+
+const updateUserSchema = z.object({
+  userId: z.string().min(1, "User id is required"),
+  name: z.string().trim().min(1, "Name is required"),
+  role: z.enum(["USER", "ADMIN"]),
+});
+
+export async function updateUserAction(input: {
+  userId: string;
+  name: string;
+  role: "USER" | "ADMIN";
+}): Promise<ActionResult> {
+  await requireAdmin();
+
+  const parsed = updateUserSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: parsed.error.issues[0]?.message ?? "Invalid request.",
+    };
+  }
+
+  const result = await updateUser(parsed.data);
+
+  if (!result.ok) {
+    return {
+      success: false,
+      error: USER_MUTATION_ERROR_MESSAGE[result.error],
+    };
+  }
+
+  revalidatePath("/admin");
+  return { success: true };
+}
+
+const deleteUserSchema = z.object({
+  userId: z.string().min(1, "User id is required"),
+});
+
+export async function deleteUserAction(input: {
+  userId: string;
+}): Promise<ActionResult> {
+  const session = await requireAdmin();
+
+  const parsed = deleteUserSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: parsed.error.issues[0]?.message ?? "Invalid request.",
+    };
+  }
+
+  const result = await deleteUser({
+    userId: parsed.data.userId,
+    currentUserId: session.user.id,
+  });
+
+  if (!result.ok) {
+    return {
+      success: false,
+      error: USER_MUTATION_ERROR_MESSAGE[result.error],
+    };
+  }
+
+  revalidatePath("/admin");
+  return { success: true };
 }
