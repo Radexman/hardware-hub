@@ -1,16 +1,33 @@
-# Current Feature
+# Current Feature: Critical E2E Tests — Playwright
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Add bullet points of what success looks like -->
+- Install and configure Playwright for the Next.js 16 App Router project, with a `webServer` block that spins up the dev (or built) server against the seeded Neon dev DB.
+- Test 1 — Auth & RBAC: visiting `/hardware` unauthenticated redirects to `/login`; user login redirects to `/hardware`; user hitting `/admin` redirects to `/hardware`; admin login + `/admin` lands on the admin panel.
+- Test 2 — Rental workflow: regular user rents an `AVAILABLE` item (default 14-day deadline), sees the success toast, the item is no longer rentable on `/hardware`, the item appears on `/my-rentals`, then returns it, sees the success toast, and the item is removed from `/my-rentals`.
+- Test 3 — Admin creates user: admin fills `CreateUserDialog` for a fresh user (`test.user.e2e+<run-id>@booksy.com`, `test1234`, `USER`), sees the success toast and modal close, the user appears in the users list, logout, then logs in as that new user and lands on `/hardware`.
+- Tests are independent of each other (no ordering required) and re-runnable without manual DB cleanup.
+- Document the new `npm test:e2e` script in the project so the test harness is discoverable.
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- Spec: [critical-tests-spec.md](context/features/critical-tests-spec.md). Out of scope: duplicate-email validation, role editing, user deletion, rental edge cases, repair flow.
+- Install `@playwright/test` as a devDependency and `npx playwright install` for the browsers (Chromium is enough for these tests). Add a `playwright.config.ts` at the repo root with `testDir: 'tests/e2e'`, a single `chromium` project, `baseURL: 'http://localhost:3000'`, and a `webServer` block that runs `npm run dev` (reuseExistingServer in CI/local).
+- npm scripts: `test:e2e` → `playwright test`; `test:e2e:ui` → `playwright test --ui` for interactive debugging. Update the project README's command table to call them out (the existing CLAUDE.md `npm test` reference targeted the never-installed Vitest setup; this phase deliberately replaces that direction with Playwright E2E for now).
+- Seeded credentials per spec: `admin@booksy.com` / `admin123`, `j.doe@booksy.com` / `user123`, `a.smith@booksy.com` / `user123`. Tests should not assume any specific item id — find an `AVAILABLE` row by status badge text or rent-button availability rather than hardcoded `item_1`.
+- Re-runnability:
+  - Test 2 (rental): is naturally idempotent — at end of test the item is returned, so the next run starts in the same state.
+  - Test 3 (create user): generate a unique email per run via `test.user.e2e+${Date.now()}@booksy.com` (or a random suffix) so successive runs don't trip the unique-email guard. Don't bother cleaning up created users in this phase — they accumulate harmlessly in the dev DB.
+- Selectors: prefer `page.getByRole('button', { name: 'Rent' })`, `page.getByLabel('Email')`, `page.getByRole('dialog')`. Sonner toasts render in a `region` with `aria-label="Notifications alt+T"` and individual toasts have `role="status"`. Shadcn dialogs render via portal with `role="dialog"`. If a control turns out to lack a stable accessible name, add a `data-testid` rather than relying on text-only selectors that drift.
+- The proxy/middleware (`src/proxy.ts`) handles auth redirects on the edge — `goto('/hardware')` on an unauthenticated context returns the `/login` page, so assert via `await expect(page).toHaveURL(/\/login/)`.
+- Test isolation across files: Playwright by default runs each test file in a fresh browser context (no cookies bleed). Use `test.beforeEach` per file to start at the right page (e.g., the rental test starts already-authed via UI login or a `storageState` fixture). For this first pass, just have each test do the login through the UI — keeps it simple and exercises the full login flow.
+- Dev server boot: Next.js dev server takes ~3-5s to be ready; `webServer.timeout` should be ~120000ms to be safe on cold starts. CI is out of scope here, but the config should still work locally without `start-server-and-test` style juggling.
+- Vitest deferral: this phase deliberately pivots from "queued Vitest unit tests" to Playwright E2E tests instead — the project's testing strategy is now end-to-end against the seeded DB rather than mock-driven unit tests. The unit-test-target carryover notes from prior phases (`classifyDue`, `toggleRepair` IN_USE guard, rental DAL guards, `createUser` duplicate-email branch) remain valuable but are explicitly *not* in scope here; revisit if/when a Vitest harness is added later.
+- Migration discipline: no schema or seed changes required.
 
 ## History
 
