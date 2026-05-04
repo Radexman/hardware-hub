@@ -22,10 +22,13 @@ test("admin creates a new user and that user can log in", async ({ page }) => {
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
 
-  // 4. Fill the form — Name, Email, Password, Role (default USER).
+  // 4. Fill the form — Name, Email, Password, Confirm password, Role (default USER).
   await dialog.getByLabel("Name").fill(newUser.name);
   await dialog.getByLabel("Email").fill(newUser.email);
-  await dialog.getByLabel("Password").fill(newUser.password);
+  await dialog
+    .getByLabel("Password", { exact: true })
+    .fill(newUser.password);
+  await dialog.getByLabel("Confirm password").fill(newUser.password);
 
   // 5. Submit.
   await dialog.getByRole("button", { name: "Create" }).click();
