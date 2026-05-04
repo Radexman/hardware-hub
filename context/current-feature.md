@@ -1,73 +1,16 @@
-# Current Feature: Item Categories + Inventory Toolbar UI Refactor
+# Current Feature
 
 ## Status
 
-In Progress
+Not Started
 
 ## Goals
 
-- Add a required `ItemCategory` enum to the Prisma schema (`LAPTOP | PHONE | TABLET | MOUSE | KEYBOARD | OTHER`) with a fresh migration; backfill existing rows.
-- Update `prisma/seed.ts` so all 11 seeded items map to a valid category (MacBook → LAPTOP, iPhone → PHONE, iPad → TABLET, Logitech mouse → MOUSE, keyboard → KEYBOARD, anything else → OTHER); reseed the dev DB.
-- Extend `device-form.tsx` with a Controller-driven Select for the category field (Zod-validated, required) and pass it through `createItemAction` / `updateItemAction` + their DAL.
-- Render a category icon (Lucide: `Laptop` / `Smartphone` / `Tablet` / `Mouse` / `Keyboard` / `Package`) next to the item name in the shared `ItemCard`, via a centralised `getItemIcon(category)` utility.
-- Add a client-side category filter to `HardwareList` and `AdminInventory` that composes with existing search / status / sort.
-- Refactor the inventory toolbar into a single coherent layout: search (constrained, `max-w-sm`) + filters group (status / category / sort, `gap-2`) + view toggle on the far right; container uses `flex items-center justify-between gap-4 flex-wrap` so it wraps cleanly on mobile.
+<!-- Bullet points of what success looks like -->
 
 ## Notes
 
-**Spec source:** `context/features/item-categories-spec.md`
-
-**Scope (in):**
-
-- Data: `ItemCategory` enum, `Item.category` required field, migration, seed update.
-- Mutations: `createItem` / `updateItem` DAL + actions accept `category`.
-- UI: device form Select, `ItemCard` icon, category filter, toolbar refactor.
-- Shared utility: `getItemIcon(category)` for icon mapping.
-
-**Scope (out / deferred):**
-
-- Rental and repair workflows — untouched.
-- AI search payload — already strips date/PII fields; we'll opt to include `category` in the AI prompt only if it improves matches, but the existing `{ id, name, brand, status, notes }` shape is the safe default. Decide during implementation.
-
-**Files to update (per spec):**
-
-- `prisma/schema.prisma` — add `ItemCategory` enum + `category` on `Item`.
-- New Prisma migration.
-- `prisma/seed.ts` — assign categories; reseed.
-- `src/lib/db/item-mutations.ts` — accept `category` in `createItem` / `updateItem` payload.
-- `src/actions/items.ts` — extend Zod schemas and pass through.
-- `src/components/admin/device-form.tsx` — add the Select + Zod field.
-- `src/components/items/item-card.tsx` — render the category icon.
-- `src/components/items/hardware-list.tsx` — category filter + toolbar refactor.
-- `src/components/admin/admin-inventory.tsx` — category filter + toolbar refactor (mirror `HardwareList`).
-- New `src/lib/items/get-item-icon.ts` (or co-located util) — icon mapping.
-- `src/lib/mock-data.ts` — include `category` on each mock item so the type stays consistent if anything still references it.
-
-**Patterns to reuse:**
-
-- Server actions returning `{ success, error? }` with the existing typed error-code maps.
-- Controller-driven shadcn `Select` (mirroring the existing role/status selects in `device-form.tsx`).
-- `FILTER_ACTIVE_BUTTON` for the active filter pill styling.
-- `ButtonGroup` for the segmented sort/category controls if they fit visually; otherwise plain `Select`s — pick whatever stays consistent with the existing toolbar.
-
-**Migration plan:**
-
-- `category` is required, but adding a NOT-NULL column with no default to a populated table will fail. Two safe options:
-  1. Add the column as nullable, backfill all existing rows in the migration via raw SQL (`UPDATE "Item" SET category = '...' WHERE name LIKE '%MacBook%'` etc.), then `ALTER TABLE` to NOT NULL.
-  2. Add the column with `@default(OTHER)`, run the migration, then update the seed/data so categories are correct, then optionally drop the default in a follow-up migration.
-- Decision: go with option 2 (default `OTHER`) for simplicity. The seed will reset all 11 items to their correct categories after the migration applies. Document in history.
-
-**Visual / UX guarantees:**
-
-- Toolbar `gap-4` between sections, `gap-2` inside the filters group; all controls vertically centered with consistent heights.
-- Search shrinks to `max-w-sm` (no longer dominant).
-- View toggle stays on the far right via `justify-between` on the toolbar.
-- Mobile: container `flex-wrap` makes the toolbar stack search → filters → toggle naturally.
-
-**Testing:**
-
-- Existing Playwright suite (auth / rental / admin-user) should still pass — none of those flows depend on category. The rental spec picks the first AVAILABLE card by `<h3>` text; adding an icon next to the name doesn't change that.
-- Manual smoke test targets: filter by each category, combine with status/search, edit/create with category, confirm icons render correctly, mobile layout wraps.
+<!-- Additional context, constraints, or details from spec -->
 
 ## History
 
@@ -99,3 +42,4 @@ In Progress
 - 2026-04-30 — Form & Filter Styling Polish: bumped field spacing from `gap-4` → `gap-5` and added `py-2` around the form body in every field-bearing form (`login-form.tsx`, `device-form.tsx`, `create-user-dialog.tsx`, `rent-dialog.tsx`); return / delete confirmation dialogs untouched (no fields). Replaced the `ACTIVE_BUTTON` constant duplicated across `HardwareList` + `AdminInventory` with a single `FILTER_ACTIVE_BUTTON` export in `src/lib/utils.ts` reading `text-brand border-brand bg-background hover:text-brand hover:bg-muted/50` — drops the solid cyan fill in favor of cyan-tinted text + brand border so the active sort/filter button reads as a coloured label. Same constant now powers the `HardwareList` Basic / AI mode toggle, keeping the segmented controls visually consistent. `aria-pressed` wiring preserved end-to-end; no layout reflow, no behavioural changes; `ViewToggle` (grid/list) left as-is per the spec. Build passes. Playwright e2e suite was not re-run — the rental spec exercises the rent dialog whose padding changed minimally (gap-3 → gap-4 + py-2 on a single inner section), well within the `sm:max-w-md` envelope; flagging this as the one open verification step from the spec for follow-up.
 - 2026-04-30 — Admin User CRUD Phase 2 (Edit & Delete): extended `src/lib/db/user-mutations.ts` with `updateUser({ userId, name, role })` (catches `P2025` → `NOT_FOUND`) and `deleteUser({ userId, currentUserId })` running in `prisma.$transaction` with three guards in order — `SELF_DELETE` (id match before the tx); `LAST_ADMIN` (if target is ADMIN, `tx.user.count({ role: ADMIN }) <= 1`); `ACTIVE_RENTALS` (count items where `assignedTo = email && status = IN_USE`). The active-rentals guard wasn't in the original spec — the schema's `Item.assignedTo` → `User.email` relation has **no `onDelete`** so it defaults to RESTRICT, meaning a delete with active rentals would otherwise throw a confusing FK violation. Reject up-front with a typed error and keep a `P2003` fallback in case a race slips past the count. `RentalHistory.userId` is `onDelete: Cascade` so history rows go away cleanly with the user. Extended `UserMutationErrorCode` + `USER_MUTATION_ERROR_MESSAGE` with `NOT_FOUND` / `SELF_DELETE` / `LAST_ADMIN` / `ACTIVE_RENTALS` copy. Two new `'use server'` actions in `src/actions/users.ts` — `updateUserAction` and `deleteUserAction`, both `requireAdmin()` first, both zod-validated; `deleteUserAction` reads `session.user.id` from the session for the `currentUserId` guard so the client can't impersonate. Both `revalidatePath('/admin')` on success. New `EditUserDialog` (Pencil trigger, RHF + zod for `name` + `role`, Controller-driven Select mirroring `device-form.tsx`, gap-5 + py-2 form spacing, Sonner success/error toasts, `formKey` bump on close) and `DeleteUserDialog` (Trash2 trigger styled `text-destructive`, shadcn `AlertDialog` confirmation, `variant="destructive"` Confirm with `useTransition` "Deleting..." copy; trigger disabled with tooltip "You can't delete your own account" when `user.id === currentUserId`). `AdminUserActions` now hosts both dialogs and accepts `user: UserListItem` + `currentUserId`; `UsersList` threads `currentUserId` into both grid and list views; `/admin/page.tsx` pulls `session.user.id` from `requireAdmin()` and passes it down via `UsersLoader`. Build passes. No schema/migration changes — `User` already has `name` + `role`; the FK-RESTRICT behavior is handled with a guard rather than a schema change. Existing Playwright suite (auth / rental / admin-user) untouched and expected to still pass — none of those specs mutate users beyond create. Manual checks queued for a browser walkthrough: edit name; edit role USER↔ADMIN; delete non-self/non-last-admin; attempt self-delete (trigger disabled + tooltip, server still re-checks); attempt to demote/delete last admin (Sonner error toast); attempt to delete a user with active rentals (Sonner error toast).
 - 2026-04-30 — Root Route Auto-Redirect: replaced the `create-next-app` placeholder body in `src/app/page.tsx` with a 5-line async server component that awaits `auth()` and `redirect()`s — `/hardware` when `session?.user` is present, `/login` otherwise. Kept the file (Next.js needs `app/page.tsx` for `/` to resolve; deleting would 404), no `force-dynamic` directive needed because `auth()` reads the session cookie which already opts the route out of static rendering — confirmed by the build output flipping `/` from `○ Static` to `ƒ Dynamic`. Edge proxy's existing `authorized` callback still handles the authed fast path (Auth Phase 1 had it bouncing authed users at `/` to `/hardware`); the new page-level redirect covers the previously-unhandled unauth case and serves as defense-in-depth if proxy config ever drifts. No proxy / schema / dependency / Playwright-suite changes. Manual verification queued for a browser walkthrough: incognito → `/` → lands on `/login`; log in → `/` → lands on `/hardware`; sign out → `/` → lands on `/login`.
+- 2026-05-04 — Item Categories + Inventory Toolbar: added `ItemCategory` enum (`LAPTOP | PHONE | TABLET | MOUSE | KEYBOARD | OTHER`) to `prisma/schema.prisma` and a required `Item.category` field with `@default(OTHER)` so the migration cleanly backfills the populated `Item` table — no separate raw-SQL backfill needed. Migration `20260504084937_add_item_category` applied to dev Neon; the seed was extended to write `category` on both `update` and `create` upsert paths (so the prior OTHER backfill is corrected to real categories on re-seed) and reseeded successfully. `Item` mock-data type now carries `category: ItemCategory` and all 11 mock items got mapped (4 LAPTOP, 2 PHONE, 1 TABLET, 2 MOUSE, 0 KEYBOARD, 2 OTHER — no keyboard in the seed). DAL: `createItem` / `updateItem` in `src/lib/db/item-mutations.ts` accept `category`; read-side mappers in `getItems()` / `getMyRentals()` include it. Actions: `createItemAction` / `updateItemAction` extended with a `categorySchema = z.enum(...)` and pass it through. Forms: `device-form.tsx` got a Controller-driven shadcn Select between Brand and Purchase date (Zod-validated, required); `AddDeviceDialog` defaults to `OTHER`, `EditDeviceDialog` reads from `item.category`; both thread `category` into their action calls. New `src/lib/items/category.ts` exports `ITEM_CATEGORIES`, `ITEM_CATEGORY_LABEL`, and `getItemIcon(category): LucideIcon` mapping to `Laptop / Smartphone / Tablet / Mouse / Keyboard / Package` per the spec. Shared `ItemCard` (`src/components/items/item-card.tsx`) now renders the category icon next to the item name in both grid header (mt-0.5 size-4 muted) and list-row leading slot. `HardwareList` and `AdminInventory` had their two-row toolbars (search above, sort+toggle below) collapsed into a single `flex flex-wrap items-center justify-between gap-4` row — search is now `max-w-sm h-9 pl-9` (no longer dominant), followed by Status `Select` (h-9 w-36, "All statuses" + 3 statuses), Category `Select` (h-9 w-40, "All categories" + 6 categories), the existing Sort `ButtonGroup`, and the `<ViewToggle>` floated to the far right via `justify-between`. `HardwareList` keeps its Basic/AI mode `ButtonGroup` adjacent to the search input. Empty-state copy branches on AI/no-match vs query-or-filter active vs nothing. AI search payload deliberately not extended with `category` — the model can already infer it from `name` and the prompt stays smaller. Bug fix carried in the same PR: the existing `ACTIVE_BUTTON` solid-cyan style on the rent-period (7/14/30) and grid/list view toggles was being overridden by the `outline` button variant's `dark:bg-input/30` in dark mode (specificity from `:is(.dark *)`); centralised a new `ACTIVE_BUTTON_BRAND` constant in `src/lib/utils.ts` with `dark:bg-brand` / `dark:hover:bg-brand/90` / `dark:border-brand` so `tailwind-merge` picks the brand fill, and replaced the duplicated local copies in `rent-dialog.tsx` and `view-toggle.tsx`. Build passes. Existing Playwright suite expected to still pass — rental spec keys off `<h3>` text which is untouched (the icon is a sibling). Reminder: after `prisma migrate dev` the generated client at `src/generated/prisma/` doesn't auto-regenerate in this Prisma 7 setup, so `npx prisma generate` is needed before `prisma db seed` if the new field is referenced — second time we've hit this, worth scripting.
