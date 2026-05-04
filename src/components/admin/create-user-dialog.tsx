@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import {
   Select,
   SelectContent,
@@ -35,16 +36,22 @@ const ROLE_LABEL: Record<(typeof ROLES)[number], string> = {
   ADMIN: "Admin",
 };
 
-const formSchema = z.object({
-  name: z.string().trim().min(1, "Name is required"),
-  email: z
-    .string()
-    .trim()
-    .min(1, "Email is required")
-    .email("Enter a valid email"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  role: z.enum(ROLES),
-});
+const formSchema = z
+  .object({
+    name: z.string().trim().min(1, "Name is required"),
+    email: z
+      .string()
+      .trim()
+      .min(1, "Email is required")
+      .email("Enter a valid email"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string().min(1, "Please confirm the password"),
+    role: z.enum(ROLES),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -66,6 +73,7 @@ export function CreateUserDialog() {
       name: "",
       email: "",
       password: "",
+      confirmPassword: "",
       role: "USER",
     },
   });
@@ -152,15 +160,27 @@ export function CreateUserDialog() {
 
           <div>
             <Label htmlFor="user-password">Password</Label>
-            <Input
+            <PasswordInput
               id="user-password"
-              type="password"
               autoComplete="new-password"
               aria-invalid={errors.password ? true : undefined}
               {...register("password")}
             />
             {errors.password ? (
               <p className={fieldError}>{errors.password.message}</p>
+            ) : null}
+          </div>
+
+          <div>
+            <Label htmlFor="user-confirm-password">Confirm password</Label>
+            <PasswordInput
+              id="user-confirm-password"
+              autoComplete="new-password"
+              aria-invalid={errors.confirmPassword ? true : undefined}
+              {...register("confirmPassword")}
+            />
+            {errors.confirmPassword ? (
+              <p className={fieldError}>{errors.confirmPassword.message}</p>
             ) : null}
           </div>
 

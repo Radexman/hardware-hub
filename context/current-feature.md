@@ -1,16 +1,48 @@
-# Current Feature
+# Current Feature: Password UX Improvements (Confirm + Visibility Toggle)
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Bullet points of what success looks like -->
+- Add a `confirmPassword` field to the Create User dialog with a Zod `.refine()` mismatch check (`path: ["confirmPassword"]`); block submit on mismatch with an inline error.
+- Add a show/hide password toggle (Lucide `Eye` / `EyeOff`) to every password input in the app — Create User dialog (both the password and the new confirm field) and Login form — defaulting to hidden.
+- Keep the change purely client-side: `confirmPassword` is never sent to the server, no DAL / action / schema changes.
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+**Spec source:** `context/features/password-improvement-spec.md`
+
+**Scope (in):**
+
+- `src/components/admin/create-user-dialog.tsx` — `confirmPassword` field + visibility toggle on both password inputs.
+- `src/components/auth/login-form.tsx` — visibility toggle on the password input.
+
+**Scope (out / deferred):**
+
+- Backend: no API / action / schema changes. `confirmPassword` stays client-side.
+- Other password surfaces: the project doesn't have password-reset / change-password flows yet; no other forms touch passwords.
+
+**Implementation approach:**
+
+- **Confirm password (Create User):** wrap the existing Zod object in `.refine()` matching `password === confirmPassword`, attach the message at `path: ["confirmPassword"]` so the error renders under the right field. Add to RHF `defaultValues` and render the field directly under Password with `autoComplete="new-password"`. The action call already only ships `name` / `email` / `password` / `role`, so no spread changes there.
+- **Visibility toggle:** small inline toggle button positioned absolutely inside the input's right edge — same pattern as the search-icon-prefix pattern already used elsewhere, just on the right. Local `useState<boolean>` per input; `type` flips between `"password"` and `"text"`. Lucide `Eye` shown when hidden, `EyeOff` shown when visible (i.e. eye = "click to reveal", crossed eye = "click to hide"). Pad the input with `pr-9` to leave room for the icon. Add `aria-label="Show password" / "Hide password"` on the toggle.
+- **Optional shared component:** the spec marks "Shared input component" as optional. Decision: extract a small `PasswordInput` client component in `src/components/ui/password-input.tsx` (or co-located under `src/components/auth/`) that wraps `Input` + the visibility toggle, takes the same RHF `register` props via `forwardRef`, and is used in both the login form and the Create User dialog. Cuts duplication and keeps a single place to tweak icon spacing / aria copy.
+
+**Patterns to reuse:**
+
+- Existing RHF + Zod + `.refine()` pattern (already used in `device-form.tsx` and elsewhere).
+- Existing `aria-invalid` + per-field error message styling (`fieldError` const used across forms).
+- Existing `Input` primitive — no need for a new shadcn primitive.
+
+**Manual / E2E test targets:**
+
+1. Create User: submit with mismatched passwords → blocked, inline "Passwords do not match" under the confirm field.
+2. Create User: submit with matched passwords → still works, modal closes + toast as today.
+3. Create User: clicking eye on Password / Confirm password independently toggles each field's visibility.
+4. Login: clicking eye toggles the password input visibility.
+5. Existing Playwright suite — `admin-user.spec.ts` fills password but doesn't currently fill a `confirmPassword` field. After this lands, that spec needs to be updated to fill the new field, otherwise it'll fail at the form-validation step.
 
 ## History
 

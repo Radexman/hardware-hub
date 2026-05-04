@@ -10,6 +10,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 
 const formSchema = z.object({
   email: z.email({ message: "Enter a valid email" }).trim(),
@@ -77,9 +78,8 @@ export function LoginForm() {
 
       <div>
         <Label htmlFor="login-password">Password</Label>
-        <Input
+        <PasswordInput
           id="login-password"
-          type="password"
           placeholder="••••••••"
           autoComplete="current-password"
           aria-invalid={errors.password ? true : undefined}
