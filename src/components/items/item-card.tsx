@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { AlertTriangle, Calendar, Clock } from "lucide-react";
 
+import { getItemIcon } from "@/lib/items/category";
 import type { Item, ItemStatus } from "@/lib/mock-data";
 import type { DueState } from "@/lib/rental-status";
 import { cn } from "@/lib/utils";
@@ -93,6 +94,7 @@ function GridCard({
   showAssignee = true,
   action,
 }: CommonProps) {
+  const CategoryIcon = getItemIcon(item.category);
   return (
     <article
       className={cn(
@@ -102,7 +104,13 @@ function GridCard({
       )}
     >
       <header className="flex items-start justify-between gap-3">
-        <h3 className="text-base font-semibold leading-tight">{item.name}</h3>
+        <div className="flex min-w-0 items-start gap-2">
+          <CategoryIcon
+            className="text-muted-foreground mt-0.5 size-4 shrink-0"
+            aria-hidden
+          />
+          <h3 className="text-base font-semibold leading-tight">{item.name}</h3>
+        </div>
         <StatusBadge status={item.status} />
       </header>
 
@@ -147,6 +155,7 @@ function ListCard({
   showAssignee = true,
   action,
 }: CommonProps) {
+  const CategoryIcon = getItemIcon(item.category);
   return (
     <article
       className={cn(
@@ -155,6 +164,10 @@ function ListCard({
         STATUS_BORDER[item.status],
       )}
     >
+      <CategoryIcon
+        className="text-muted-foreground size-4 shrink-0"
+        aria-hidden
+      />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <h3 className="truncate text-sm font-semibold">{item.name}</h3>

@@ -35,11 +35,12 @@ enum Role {
 }
 
 model Item {
-  id           String     @id @default(cuid())
+  id           String       @id @default(cuid())
   name         String
   brand        String
+  category     ItemCategory @default(OTHER)
   purchaseDate DateTime?
-  status       ItemStatus @default(AVAILABLE)
+  status       ItemStatus   @default(AVAILABLE)
   assignedTo   String?
   returnDate   DateTime?
   notes        String?
@@ -53,12 +54,22 @@ model Item {
   @@index([status])
   @@index([assignedTo])
   @@index([brand])
+  @@index([category])
 }
 
 enum ItemStatus {
   AVAILABLE
   IN_USE
   REPAIR
+}
+
+enum ItemCategory {
+  LAPTOP
+  PHONE
+  TABLET
+  MOUSE
+  KEYBOARD
+  OTHER
 }
 
 model RentalHistory {

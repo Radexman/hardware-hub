@@ -23,10 +23,7 @@ import {
   addDays,
   type RentalPeriodDays,
 } from "@/lib/rental-status";
-import { cn } from "@/lib/utils";
-
-const ACTIVE_BUTTON =
-  "bg-brand text-brand-foreground border-brand hover:bg-brand/90 hover:text-brand-foreground";
+import { ACTIVE_BUTTON_BRAND, cn } from "@/lib/utils";
 
 const DATE_FMT = new Intl.DateTimeFormat("en-US", {
   month: "short",
@@ -102,7 +99,7 @@ export function RentDialog({
                   variant="outline"
                   size="sm"
                   onClick={() => setDays(opt)}
-                  className={cn(isActive && ACTIVE_BUTTON)}
+                  className={cn(isActive && ACTIVE_BUTTON_BRAND)}
                   aria-pressed={isActive}
                 >
                   {opt} days

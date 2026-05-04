@@ -1,16 +1,73 @@
-# Current Feature
+# Current Feature: Item Categories + Inventory Toolbar UI Refactor
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Bullet points of what success looks like -->
+- Add a required `ItemCategory` enum to the Prisma schema (`LAPTOP | PHONE | TABLET | MOUSE | KEYBOARD | OTHER`) with a fresh migration; backfill existing rows.
+- Update `prisma/seed.ts` so all 11 seeded items map to a valid category (MacBook → LAPTOP, iPhone → PHONE, iPad → TABLET, Logitech mouse → MOUSE, keyboard → KEYBOARD, anything else → OTHER); reseed the dev DB.
+- Extend `device-form.tsx` with a Controller-driven Select for the category field (Zod-validated, required) and pass it through `createItemAction` / `updateItemAction` + their DAL.
+- Render a category icon (Lucide: `Laptop` / `Smartphone` / `Tablet` / `Mouse` / `Keyboard` / `Package`) next to the item name in the shared `ItemCard`, via a centralised `getItemIcon(category)` utility.
+- Add a client-side category filter to `HardwareList` and `AdminInventory` that composes with existing search / status / sort.
+- Refactor the inventory toolbar into a single coherent layout: search (constrained, `max-w-sm`) + filters group (status / category / sort, `gap-2`) + view toggle on the far right; container uses `flex items-center justify-between gap-4 flex-wrap` so it wraps cleanly on mobile.
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+**Spec source:** `context/features/item-categories-spec.md`
+
+**Scope (in):**
+
+- Data: `ItemCategory` enum, `Item.category` required field, migration, seed update.
+- Mutations: `createItem` / `updateItem` DAL + actions accept `category`.
+- UI: device form Select, `ItemCard` icon, category filter, toolbar refactor.
+- Shared utility: `getItemIcon(category)` for icon mapping.
+
+**Scope (out / deferred):**
+
+- Rental and repair workflows — untouched.
+- AI search payload — already strips date/PII fields; we'll opt to include `category` in the AI prompt only if it improves matches, but the existing `{ id, name, brand, status, notes }` shape is the safe default. Decide during implementation.
+
+**Files to update (per spec):**
+
+- `prisma/schema.prisma` — add `ItemCategory` enum + `category` on `Item`.
+- New Prisma migration.
+- `prisma/seed.ts` — assign categories; reseed.
+- `src/lib/db/item-mutations.ts` — accept `category` in `createItem` / `updateItem` payload.
+- `src/actions/items.ts` — extend Zod schemas and pass through.
+- `src/components/admin/device-form.tsx` — add the Select + Zod field.
+- `src/components/items/item-card.tsx` — render the category icon.
+- `src/components/items/hardware-list.tsx` — category filter + toolbar refactor.
+- `src/components/admin/admin-inventory.tsx` — category filter + toolbar refactor (mirror `HardwareList`).
+- New `src/lib/items/get-item-icon.ts` (or co-located util) — icon mapping.
+- `src/lib/mock-data.ts` — include `category` on each mock item so the type stays consistent if anything still references it.
+
+**Patterns to reuse:**
+
+- Server actions returning `{ success, error? }` with the existing typed error-code maps.
+- Controller-driven shadcn `Select` (mirroring the existing role/status selects in `device-form.tsx`).
+- `FILTER_ACTIVE_BUTTON` for the active filter pill styling.
+- `ButtonGroup` for the segmented sort/category controls if they fit visually; otherwise plain `Select`s — pick whatever stays consistent with the existing toolbar.
+
+**Migration plan:**
+
+- `category` is required, but adding a NOT-NULL column with no default to a populated table will fail. Two safe options:
+  1. Add the column as nullable, backfill all existing rows in the migration via raw SQL (`UPDATE "Item" SET category = '...' WHERE name LIKE '%MacBook%'` etc.), then `ALTER TABLE` to NOT NULL.
+  2. Add the column with `@default(OTHER)`, run the migration, then update the seed/data so categories are correct, then optionally drop the default in a follow-up migration.
+- Decision: go with option 2 (default `OTHER`) for simplicity. The seed will reset all 11 items to their correct categories after the migration applies. Document in history.
+
+**Visual / UX guarantees:**
+
+- Toolbar `gap-4` between sections, `gap-2` inside the filters group; all controls vertically centered with consistent heights.
+- Search shrinks to `max-w-sm` (no longer dominant).
+- View toggle stays on the far right via `justify-between` on the toolbar.
+- Mobile: container `flex-wrap` makes the toolbar stack search → filters → toggle naturally.
+
+**Testing:**
+
+- Existing Playwright suite (auth / rental / admin-user) should still pass — none of those flows depend on category. The rental spec picks the first AVAILABLE card by `<h3>` text; adding an icon next to the name doesn't change that.
+- Manual smoke test targets: filter by each category, combine with status/search, edit/create with category, confirm icons render correctly, mobile layout wraps.
 
 ## History
 

@@ -8,21 +8,41 @@ import { aiSearchItemsAction } from "@/actions/search";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ItemCard, type ItemCardView } from "@/components/items/item-card";
 import { RentDialog } from "@/components/items/rent-dialog";
 import { ViewToggle } from "@/components/items/view-toggle";
-import type { Item, ItemStatus } from "@/lib/mock-data";
+import {
+  ITEM_CATEGORIES,
+  ITEM_CATEGORY_LABEL,
+} from "@/lib/items/category";
+import type { Item, ItemCategory, ItemStatus } from "@/lib/mock-data";
 import type { RentalPeriodDays } from "@/lib/rental-status";
 import { FILTER_ACTIVE_BUTTON, cn } from "@/lib/utils";
 
 type SortKey = "name" | "brand" | "date" | "status";
 type SearchMode = "basic" | "ai";
+type StatusFilter = "ALL" | ItemStatus;
+type CategoryFilter = "ALL" | ItemCategory;
 
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: "name", label: "Name" },
   { key: "brand", label: "Brand" },
   { key: "date", label: "Date" },
   { key: "status", label: "Status" },
+];
+
+const STATUS_FILTER_OPTIONS: { value: StatusFilter; label: string }[] = [
+  { value: "ALL", label: "All statuses" },
+  { value: "AVAILABLE", label: "Available" },
+  { value: "IN_USE", label: "In use" },
+  { value: "REPAIR", label: "Repair" },
 ];
 
 const STATUS_ORDER: Record<ItemStatus, number> = {
@@ -72,6 +92,8 @@ function toAiPayload(items: Item[]) {
 export function HardwareList({ items }: { items: Item[] }) {
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("name");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("ALL");
   const [view, setView] = useState<ItemCardView>("grid");
   const [mode, setMode] = useState<SearchMode>("basic");
   const [aiResultIds, setAiResultIds] = useState<string[] | null>(null);
@@ -128,13 +150,30 @@ export function HardwareList({ items }: { items: Item[] }) {
         ? optimisticItems.filter((item) => matchesQuery(item, trimmed))
         : optimisticItems;
     }
+
+    if (statusFilter !== "ALL") {
+      filtered = filtered.filter((item) => item.status === statusFilter);
+    }
+    if (categoryFilter !== "ALL") {
+      filtered = filtered.filter((item) => item.category === categoryFilter);
+    }
+
     return [...filtered].sort((a, b) => compareItems(a, b, sortKey));
-  }, [optimisticItems, query, sortKey, mode, aiResultIds]);
+  }, [
+    optimisticItems,
+    query,
+    sortKey,
+    mode,
+    aiResultIds,
+    statusFilter,
+    categoryFilter,
+  ]);
 
   const aiHasNoMatches =
     mode === "ai" && aiResultIds !== null && visible.length === 0;
-  const basicHasNoMatches =
-    mode === "basic" && visible.length === 0 && query.trim().length > 0;
+  const hasActiveQuery = mode === "basic" && query.trim().length > 0;
+  const hasActiveFilter = statusFilter !== "ALL" || categoryFilter !== "ALL";
+  const noMatches = visible.length === 0;
 
   const SearchIcon = mode === "ai" ? Sparkles : Search;
   const iconClass = cn(
@@ -154,11 +193,40 @@ export function HardwareList({ items }: { items: Item[] }) {
         </p>
       </header>
 
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
-            Search
-          </span>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative w-full max-w-sm">
+            {aiPending ? (
+              <Loader2 className="text-brand pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 animate-spin" />
+            ) : (
+              <SearchIcon className={iconClass} />
+            )}
+            <Input
+              type="search"
+              value={query}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                if (mode === "ai") setAiResultIds(null);
+              }}
+              onKeyDown={(event) => {
+                if (mode === "ai" && event.key === "Enter") {
+                  event.preventDefault();
+                  handleAiSubmit();
+                }
+              }}
+              disabled={aiPending}
+              placeholder={
+                mode === "ai"
+                  ? "Describe what you need and press Enter"
+                  : "Search hardware..."
+              }
+              aria-label={
+                mode === "ai" ? "AI search hardware" : "Search hardware"
+              }
+              className="h-9 pl-9"
+            />
+          </div>
+
           <ButtonGroup aria-label="Search mode">
             <Button
               type="button"
@@ -183,49 +251,47 @@ export function HardwareList({ items }: { items: Item[] }) {
               AI
             </Button>
           </ButtonGroup>
-        </div>
 
-        <div className="relative">
-          {aiPending ? (
-            <Loader2
-              className={cn(
-                "text-brand pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 animate-spin",
-              )}
-            />
-          ) : (
-            <SearchIcon className={iconClass} />
-          )}
-          <Input
-            type="search"
-            value={query}
-            onChange={(event) => {
-              setQuery(event.target.value);
-              if (mode === "ai") setAiResultIds(null);
-            }}
-            onKeyDown={(event) => {
-              if (mode === "ai" && event.key === "Enter") {
-                event.preventDefault();
-                handleAiSubmit();
-              }
-            }}
-            disabled={aiPending}
-            placeholder={
-              mode === "ai"
-                ? "Describe what you need (e.g. \"laptop for development\") and press Enter"
-                : "Search hardware..."
-            }
-            aria-label={mode === "ai" ? "AI search hardware" : "Search hardware"}
-            className="h-11 pl-10"
-          />
-        </div>
-      </div>
+          <Select
+            value={statusFilter}
+            onValueChange={(v) => setStatusFilter(v as StatusFilter)}
+          >
+            <SelectTrigger
+              className="h-9 w-36"
+              aria-label="Filter by status"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {STATUS_FILTER_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
-            Sort
-          </span>
-          <ButtonGroup>
+          <Select
+            value={categoryFilter}
+            onValueChange={(v) => setCategoryFilter(v as CategoryFilter)}
+          >
+            <SelectTrigger
+              className="h-9 w-40"
+              aria-label="Filter by category"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All categories</SelectItem>
+              {ITEM_CATEGORIES.map((category) => (
+                <SelectItem key={category} value={category}>
+                  {ITEM_CATEGORY_LABEL[category]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <ButtonGroup aria-label="Sort">
             {SORT_OPTIONS.map((option) => {
               const isActive = option.key === sortKey;
               return (
@@ -248,12 +314,12 @@ export function HardwareList({ items }: { items: Item[] }) {
         <ViewToggle value={view} onChange={setView} />
       </div>
 
-      {visible.length === 0 ? (
+      {noMatches ? (
         <div className="text-muted-foreground border-border rounded-lg border border-dashed p-8 text-center text-sm">
           {aiHasNoMatches
             ? "No AI matches found."
-            : basicHasNoMatches
-              ? "No items match your search."
+            : hasActiveQuery || hasActiveFilter
+              ? "No items match your filters."
               : "No items to show."}
         </div>
       ) : view === "grid" ? (

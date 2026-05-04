@@ -18,6 +18,15 @@ export type ActionResult<T = undefined> =
 
 const editableStatusSchema = z.enum(["AVAILABLE", "REPAIR"]);
 
+const categorySchema = z.enum([
+  "LAPTOP",
+  "PHONE",
+  "TABLET",
+  "MOUSE",
+  "KEYBOARD",
+  "OTHER",
+]);
+
 const isoDateSchema = z
   .string()
   .trim()
@@ -29,6 +38,7 @@ const isoDateSchema = z
 const createSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
   brand: z.string().trim().min(1, "Brand is required"),
+  category: categorySchema,
   purchaseDate: isoDateSchema,
   status: editableStatusSchema,
   notes: z.string().trim().optional().default(""),
@@ -38,6 +48,7 @@ const updateSchema = z.object({
   itemId: z.string().min(1, "Missing item id"),
   name: z.string().trim().min(1, "Name is required"),
   brand: z.string().trim().min(1, "Brand is required"),
+  category: categorySchema,
   purchaseDate: isoDateSchema,
   status: editableStatusSchema.optional(),
   notes: z.string().trim().optional().default(""),
@@ -65,6 +76,7 @@ function revalidateInventoryViews() {
 export async function createItemAction(input: {
   name: string;
   brand: string;
+  category: "LAPTOP" | "PHONE" | "TABLET" | "MOUSE" | "KEYBOARD" | "OTHER";
   purchaseDate: string;
   status: "AVAILABLE" | "REPAIR";
   notes?: string;
@@ -79,6 +91,7 @@ export async function createItemAction(input: {
   const result = await createItem({
     name: parsed.data.name,
     brand: parsed.data.brand,
+    category: parsed.data.category,
     purchaseDate: parsePurchaseDate(parsed.data.purchaseDate),
     status: parsed.data.status,
     notes: parsed.data.notes ? parsed.data.notes : null,
@@ -99,6 +112,7 @@ export async function updateItemAction(input: {
   itemId: string;
   name: string;
   brand: string;
+  category: "LAPTOP" | "PHONE" | "TABLET" | "MOUSE" | "KEYBOARD" | "OTHER";
   purchaseDate: string;
   status?: "AVAILABLE" | "REPAIR";
   notes?: string;
@@ -114,6 +128,7 @@ export async function updateItemAction(input: {
     itemId: parsed.data.itemId,
     name: parsed.data.name,
     brand: parsed.data.brand,
+    category: parsed.data.category,
     purchaseDate: parsePurchaseDate(parsed.data.purchaseDate),
     notes: parsed.data.notes ? parsed.data.notes : null,
     status: parsed.data.status,

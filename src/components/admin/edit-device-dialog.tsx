@@ -25,6 +25,7 @@ function defaultsFromItem(item: Item): DeviceFormValues {
   return {
     name: item.name,
     brand: item.brand,
+    category: item.category,
     purchaseDate: item.purchaseDate ?? "",
     status: item.status === "REPAIR" ? "REPAIR" : "AVAILABLE",
     notes: item.notes ?? "",
@@ -55,6 +56,7 @@ export function EditDeviceDialog({
       itemId: item.id,
       name: values.name,
       brand: values.brand,
+      category: values.category,
       purchaseDate: values.purchaseDate,
       notes: values.notes,
       status: lockStatus ? undefined : values.status,

@@ -18,6 +18,7 @@ export async function getMyRentals(userEmail: string): Promise<Item[]> {
     id: row.id,
     name: row.name,
     brand: row.brand,
+    category: row.category,
     purchaseDate: toIsoDate(row.purchaseDate),
     status: row.status,
     assignedTo: row.assignedTo,

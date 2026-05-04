@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { ITEM_CATEGORIES, ITEM_CATEGORY_LABEL } from "@/lib/items/category";
 import { cn } from "@/lib/utils";
 
 const EDITABLE_STATUSES = ["AVAILABLE", "REPAIR"] as const;
@@ -27,9 +28,19 @@ const STATUS_LABEL: Record<EditableStatus | "IN_USE", string> = {
   IN_USE: "In Use",
 };
 
+const ITEM_CATEGORY_VALUES = [
+  "LAPTOP",
+  "PHONE",
+  "TABLET",
+  "MOUSE",
+  "KEYBOARD",
+  "OTHER",
+] as const;
+
 export const deviceFormSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
   brand: z.string().trim().min(1, "Brand is required"),
+  category: z.enum(ITEM_CATEGORY_VALUES),
   purchaseDate: z.string().trim().min(1, "Purchase date is required"),
   status: z.enum(EDITABLE_STATUSES),
   notes: z.string().trim().optional(),
@@ -111,6 +122,31 @@ export function DeviceForm({
         />
         {errors.brand ? (
           <p className={fieldError}>{errors.brand.message}</p>
+        ) : null}
+      </div>
+
+      <div>
+        <Label htmlFor="device-category">Category</Label>
+        <Controller
+          control={control}
+          name="category"
+          render={({ field }) => (
+            <Select value={field.value} onValueChange={field.onChange}>
+              <SelectTrigger id="device-category" className="w-full">
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                {ITEM_CATEGORIES.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {ITEM_CATEGORY_LABEL[category]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
+        {errors.category ? (
+          <p className={fieldError}>{errors.category.message}</p>
         ) : null}
       </div>
 
