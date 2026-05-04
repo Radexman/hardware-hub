@@ -4,12 +4,9 @@ import { LayoutGrid, List } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
-import { cn } from "@/lib/utils";
+import { ACTIVE_BUTTON_BRAND, cn } from "@/lib/utils";
 
 export type ViewMode = "grid" | "list";
-
-const ACTIVE_BUTTON =
-  "bg-brand text-brand-foreground border-brand hover:bg-brand/90 hover:text-brand-foreground";
 
 export function ViewToggle({
   value,
@@ -27,7 +24,7 @@ export function ViewToggle({
         onClick={() => onChange("grid")}
         aria-pressed={value === "grid"}
         aria-label="Grid view"
-        className={cn(value === "grid" && ACTIVE_BUTTON)}
+        className={cn(value === "grid" && ACTIVE_BUTTON_BRAND)}
       >
         <LayoutGrid />
       </Button>
@@ -38,7 +35,7 @@ export function ViewToggle({
         onClick={() => onChange("list")}
         aria-pressed={value === "list"}
         aria-label="List view"
-        className={cn(value === "list" && ACTIVE_BUTTON)}
+        className={cn(value === "list" && ACTIVE_BUTTON_BRAND)}
       >
         <List />
       </Button>

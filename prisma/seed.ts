@@ -70,11 +70,12 @@ async function main() {
   for (const item of items) {
     await prisma.item.upsert({
       where: { id: item.id },
-      update: {},
+      update: { category: item.category },
       create: {
         id: item.id,
         name: item.name,
         brand: item.brand,
+        category: item.category,
         purchaseDate: item.purchaseDate ? new Date(item.purchaseDate) : null,
         status: item.status,
         assignedTo: item.assignedTo,

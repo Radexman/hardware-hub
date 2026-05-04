@@ -1,4 +1,11 @@
 export type ItemStatus = "AVAILABLE" | "IN_USE" | "REPAIR";
+export type ItemCategory =
+	| "LAPTOP"
+	| "PHONE"
+	| "TABLET"
+	| "MOUSE"
+	| "KEYBOARD"
+	| "OTHER";
 export type Role = "USER" | "ADMIN";
 export type RentalAction = "RENT" | "RETURN";
 
@@ -6,6 +13,7 @@ export type Item = {
 	id: string;
 	name: string;
 	brand: string;
+	category: ItemCategory;
 	purchaseDate: string | null;
 	status: ItemStatus;
 	assignedTo: string | null;
@@ -43,6 +51,7 @@ export const items: Item[] = [
 		id: "item_1",
 		name: "Apple iPhone 13 Pro Max",
 		brand: "Apple",
+		category: "PHONE",
 		purchaseDate: "2021-11-23",
 		status: "AVAILABLE",
 		assignedTo: null,
@@ -53,6 +62,7 @@ export const items: Item[] = [
 		id: "item_2",
 		name: "Apple MacBook Pro 13",
 		brand: "Apple",
+		category: "LAPTOP",
 		purchaseDate: "2021-12-20",
 		status: "IN_USE",
 		assignedTo: "j.doe@booksy.com",
@@ -63,6 +73,7 @@ export const items: Item[] = [
 		id: "item_3",
 		name: "Dell XPS 15 9510",
 		brand: "Dell",
+		category: "LAPTOP",
 		purchaseDate: "2022-03-15",
 		status: "AVAILABLE",
 		assignedTo: null,
@@ -73,6 +84,7 @@ export const items: Item[] = [
 		id: "item_4",
 		name: "iPad Pro 12.9",
 		brand: "Apple",
+		category: "TABLET",
 		purchaseDate: "2023-05-22",
 		status: "AVAILABLE",
 		assignedTo: null,
@@ -83,6 +95,7 @@ export const items: Item[] = [
 		id: "item_5",
 		name: "Lenovo ThinkPad X1",
 		brand: "Lenovo",
+		category: "LAPTOP",
 		purchaseDate: "2023-01-01",
 		status: "REPAIR",
 		assignedTo: null,
@@ -93,6 +106,7 @@ export const items: Item[] = [
 		id: "item_6",
 		name: "Logitech MX Master 3",
 		brand: "Logitech",
+		category: "MOUSE",
 		purchaseDate: "2024-10-10",
 		status: "AVAILABLE",
 		assignedTo: null,
@@ -103,6 +117,7 @@ export const items: Item[] = [
 		id: "item_7",
 		name: "MacBook Air M2",
 		brand: "Apple",
+		category: "LAPTOP",
 		purchaseDate: "2023-08-01",
 		status: "AVAILABLE",
 		assignedTo: null,
@@ -113,6 +128,7 @@ export const items: Item[] = [
 		id: "item_8",
 		name: "Razer Basilisk V2",
 		brand: "Razer",
+		category: "MOUSE",
 		purchaseDate: "2021-06-05",
 		status: "REPAIR",
 		assignedTo: null,
@@ -123,6 +139,7 @@ export const items: Item[] = [
 		id: "item_9",
 		name: "SAMSUNG Galaxy S21",
 		brand: "Samsung",
+		category: "PHONE",
 		purchaseDate: "2021-11-23",
 		status: "AVAILABLE",
 		assignedTo: null,
@@ -133,6 +150,7 @@ export const items: Item[] = [
 		id: "item_10",
 		name: "Sony WH-1000XM4",
 		brand: "Sony",
+		category: "OTHER",
 		purchaseDate: "2022-01-12",
 		status: "IN_USE",
 		assignedTo: "a.smith@booksy.com",
@@ -143,6 +161,7 @@ export const items: Item[] = [
 		id: "item_11",
 		name: "Unknown Device",
 		brand: "Unknown",
+		category: "OTHER",
 		purchaseDate: null,
 		status: "REPAIR",
 		assignedTo: null,

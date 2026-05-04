@@ -23,6 +23,7 @@ import {
 const DEFAULT_VALUES: DeviceFormValues = {
   name: "",
   brand: "",
+  category: "OTHER",
   purchaseDate: "",
   status: "AVAILABLE",
   notes: "",
@@ -43,6 +44,7 @@ export function AddDeviceDialog({ brandOptions }: { brandOptions: string[] }) {
     const res = await createItemAction({
       name: values.name,
       brand: values.brand,
+      category: values.category,
       purchaseDate: values.purchaseDate,
       status: values.status,
       notes: values.notes,

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { prisma } from "@/lib/prisma";
-import type { ItemStatus } from "@/lib/mock-data";
+import type { ItemCategory, ItemStatus } from "@/lib/mock-data";
 
 export type ItemMutationErrorCode =
   | "NOT_FOUND"
@@ -25,6 +25,7 @@ export const ITEM_MUTATION_ERROR_MESSAGE: Record<ItemMutationErrorCode, string> 
 export type CreateItemInput = {
   name: string;
   brand: string;
+  category: ItemCategory;
   purchaseDate: Date | null;
   status: "AVAILABLE" | "REPAIR";
   notes: string | null;
@@ -37,6 +38,7 @@ export async function createItem(
     data: {
       name: input.name,
       brand: input.brand,
+      category: input.category,
       purchaseDate: input.purchaseDate,
       status: input.status,
       notes: input.notes,
@@ -52,6 +54,7 @@ export type UpdateItemInput = {
   itemId: string;
   name: string;
   brand: string;
+  category: ItemCategory;
   purchaseDate: Date | null;
   notes: string | null;
   status?: "AVAILABLE" | "REPAIR";
